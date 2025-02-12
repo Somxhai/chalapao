@@ -1,0 +1,18 @@
+networks:
+  chalapao-network:
+    driver: bridge
+
+services:
+  postgresql:
+    image: 'bitnami/postgresql:latest'
+    environment:
+      - POSTGRESQL_PASSWORD=pookiebear
+      - POSTGRESQL_USERNAME=server
+      - POSTGRESQL_DATABASE=chalapao
+    ports:
+      - '5439:5432'
+    networks:
+      - chalapao-network
+
+
+
