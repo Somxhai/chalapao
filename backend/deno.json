@@ -1,0 +1,14 @@
+{
+  "imports": {
+    "hono": "jsr:@hono/hono@^4.6.20",
+    "postgres": "https://deno.land/x/postgres@v0.19.3/mod.ts"
+  },
+  "tasks": {
+    "start": "deno run --allow-net main.ts",
+    "dev": "denon run --allow-net --allow-env main.ts"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "hono/jsx"
+  }
+}
