@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT user_pkey PRIMARY KEY (id),
     CONSTRAINT user_email_unique UNIQUE (email)
   );
-CREATE INDEX user_email_idx ON "user"(email);
 `;
 
 export const CREATE_VERIFICATION_TABLE = `
@@ -25,7 +24,6 @@ CREATE TABLE IF NOT EXISTS
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT verification_pkey PRIMARY KEY (id)
   );
-CREATE INDEX verification_identifier_idx ON verification(identifier);
 `;
 
 export const CREATE_SESSION_TABLE = `
@@ -42,7 +40,6 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT session_pkey PRIMARY KEY (id),
     CONSTRAINT session_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
-CREATE INDEX session_user_idx ON "session"(user_id);
 `;
 
 export const CREATE_ACCOUNT_TABLE = `
@@ -64,9 +61,7 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT account_pkey PRIMARY KEY (id),
     CONSTRAINT account_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
-CREATE INDEX account_user_idx ON "account"(user_id);
 `;
-
 
 export const CREATE_ADDRESS_TABLE = `
 CREATE TABLE IF NOT EXISTS
@@ -78,8 +73,8 @@ CREATE TABLE IF NOT EXISTS
     district VARCHAR NOT NULL,
     subdistrict VARCHAR NOT NULL,
     province VARCHAR NOT NULL,
-    PRIMARY KEY (address_id),             
-    CONSTRAINT address_user_fk FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+    PRIMARY KEY (address_id),
+    CONSTRAINT address_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
 `;
 
@@ -90,10 +85,10 @@ CREATE TABLE IF NOT EXISTS
     user_id VARCHAR NOT NULL,
     status TEXT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    rental_id VARCHAR UNIQUE,
+    rental_id UUID NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (payment_id),
-    CONSTRAINT payment_user_fk FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE,
+    CONSTRAINT payment_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT payment_rental_fk FOREIGN KEY (rental_id) REFERENCES "rental"(rental_id) ON DELETE CASCADE
   );
 `;
@@ -109,7 +104,7 @@ CREATE TABLE IF NOT EXISTS
     end_date DATE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (rental_id),
-    CONSTRAINT rental_user_fk FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+    CONSTRAINT rental_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
 `;
 
@@ -122,11 +117,11 @@ CREATE TABLE IF NOT EXISTS
     description TEXT,
     status TEXT NOT NULL,
     price_per_day DECIMAL(10,2) NOT NULL,
-    category_id VARCHAR NOT NULL,
-    rental_id VARCHAR NOT NULL,
+    category_id UUID NOT NULL,
+    rental_id UUID NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (item_id),
-    CONSTRAINT item_user_fk FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE,
+    CONSTRAINT item_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT item_category_fk FOREIGN KEY (category_id) REFERENCES "category"(category_id) ON DELETE CASCADE,
     CONSTRAINT item_rental_fk FOREIGN KEY (rental_id) REFERENCES "rental"(rental_id) ON DELETE CASCADE
   );
@@ -144,15 +139,15 @@ CREATE TABLE IF NOT EXISTS
 export const CREATE_REVIEW_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "review" (
-    review_id UUID DEFAULT gen_random_uuid()
-    item_id VARCHAR NOT NULL,
+    review_id UUID DEFAULT gen_random_uuid(),
+    item_id UUID NOT NULL,
     user_id VARCHAR NOT NULL,
     rating INT CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (review_id, item_id),
+    PRIMARY KEY (review_id),
     CONSTRAINT review_item_fk FOREIGN KEY (item_id) REFERENCES "item"(item_id) ON DELETE CASCADE,
-    CONSTRAINT review_user_fk FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE,
+    CONSTRAINT review_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT unique_user_item_review UNIQUE (user_id, item_id)
   );
 `;
