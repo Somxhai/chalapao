@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT user_pkey PRIMARY KEY (id),
     CONSTRAINT user_email_unique UNIQUE (email)
   );
-CREATE INDEX user_email_idx ON "user"(email);
+CREATE INDEX IF NOT EXISTS user_email_idx ON "user"(email);
 `;
 
 export const CREATE_VERIFICATION_TABLE = `
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT verification_pkey PRIMARY KEY (id)
   );
-CREATE INDEX verification_identifier_idx ON verification(identifier);
+CREATE INDEX IF NOT EXISTS verification_identifier_idx ON verification(identifier);
 `;
 
 export const CREATE_SESSION_TABLE = `
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT session_pkey PRIMARY KEY (id),
     CONSTRAINT session_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
-CREATE INDEX session_user_idx ON "session"(user_id);
+CREATE INDEX IF NOT EXISTS session_user_idx ON "session"(user_id);
 `;
 
 export const CREATE_ACCOUNT_TABLE = `
@@ -65,5 +65,5 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT account_pkey PRIMARY KEY (id),
     CONSTRAINT account_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
-CREATE INDEX account_user_idx ON "account"(user_id);
+CREATE INDEX IF NOT EXISTS account_user_idx ON "account"(user_id);
 `;
