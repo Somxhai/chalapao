@@ -35,18 +35,18 @@ CREATE TABLE IF NOT EXISTS
     description TEXT,
     status TEXT NOT NULL,
     price_per_day DECIMAL(10,2) NOT NULL,
-    category_id VARCHAR NOT NULL,
+    category_id UUID NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT item_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
-    CONSTRAINT item_category_fk FOREIGN KEY (category_id) REFERENCES "category"(id) ON DELETE CASCADE,
+    CONSTRAINT item_category_fk FOREIGN KEY (category_id) REFERENCES "category"(id) ON DELETE CASCADE
   );
 `;
 
 export const CREATE_CATEGORY_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "category" (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY
-    category_name TEXT NOT NULL UNIQUE,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
   );
 `;
 
@@ -60,6 +60,6 @@ CREATE TABLE IF NOT EXISTS
     comment TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT review_item_fk FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE,
-    CONSTRAINT review_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
+    CONSTRAINT review_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
 `;
