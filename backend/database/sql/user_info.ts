@@ -9,7 +9,7 @@ export const CREATE_USER_INFO_TABLE = `CREATE TABLE IF NOT EXISTS
     phone_number VARCHAR UNIQUE NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_info_id),
+    PRIMARY KEY (id),
     CONSTRAINT user_info_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );`;
 
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS
     district VARCHAR NOT NULL,
     subdistrict VARCHAR NOT NULL,
     province VARCHAR NOT NULL,
-    PRIMARY KEY (address_id),
+    PRIMARY KEY (id),
     CONSTRAINT address_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
 `;
