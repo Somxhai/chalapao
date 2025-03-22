@@ -7,15 +7,15 @@ CREATE TABLE IF NOT EXISTS
     email VARCHAR NOT NULL,
     email_verified BOOLEAN NULL DEFAULT false,
     user_image VARCHAR,
-    user_rating FLOAT DEFAULT 0 CHECK (user_rating BETWEEN 0 & 5),
+    user_rating FLOAT DEFAULT 0 CHECK (user_rating BETWEEN 0 AND 5),
     created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
-    user_type TEXT NOT NULL DEFAULT 'renter' CHECK (role IN ('renter', 'lessor')),
+    user_type TEXT NOT NULL DEFAULT 'renter' CHECK (user_type IN ('renter', 'lessor')),
+
     CONSTRAINT user_pkey PRIMARY KEY (id),
     CONSTRAINT user_email_unique UNIQUE (email),
     CONSTRAINT has FOREIGN KEY (user_info_id) REFERENCES "user_info"(id) ON DELETE CASCADE
   );
-CREATE INDEX IF NOT EXISTS user_email_idx ON "user"(email);
 `;
 
 export const CREATE_VERIFICATION_TABLE = `
@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT verification_pkey PRIMARY KEY (id)
   );
-CREATE INDEX IF NOT EXISTS verification_identifier_idx ON verification(identifier);
 `;
 
 export const CREATE_SESSION_TABLE = `
@@ -46,7 +45,6 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT session_pkey PRIMARY KEY (id),
     CONSTRAINT session_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
-CREATE INDEX IF NOT EXISTS session_user_idx ON "session"(user_id);
 `;
 
 export const CREATE_ACCOUNT_TABLE = `
@@ -68,5 +66,4 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT account_pkey PRIMARY KEY (id),
     CONSTRAINT account_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
-CREATE INDEX IF NOT EXISTS account_user_idx ON "account"(user_id);
 `;
