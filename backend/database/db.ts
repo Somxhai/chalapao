@@ -7,7 +7,7 @@ import {
   CREATE_PAYMENT_TABLE,
   CREATE_RENTAL_TABLE,
   CREATE_REVIEW_IMAGE_TABLE,
-  CREATE_REVIEW_TABLE,
+  CREATE_REVIEW_USER_TABLE,
 } from "./sql/app.ts";
 
 import {
@@ -56,7 +56,7 @@ try {
   await client.queryArray(CREATE_ITEM_TABLE);
   await client.queryArray(CREATE_RENTAL_TABLE);
   await client.queryArray(CREATE_PAYMENT_TABLE);
-  await client.queryArray(CREATE_REVIEW_TABLE);
+  await client.queryArray(CREATE_REVIEW_USER_TABLE);
   await client.queryArray(CREATE_REVIEW_IMAGE_TABLE);
   await client.queryArray(CREATE_KEYWORD_TABLE);
   await client.queryArray(CREATE_ITEM_IMAGE_TABLE);
