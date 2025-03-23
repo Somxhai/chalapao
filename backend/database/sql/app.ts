@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     renter_id VARCHAR NOT NULL,
     status TEXT NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
+    total_price NUMERIC NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT make FOREIGN KEY (renter_id) REFERENCES "user"(id) ON DELETE CASCADE
@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS "rental" (
     delivery_address VARCHAR NOT NULL,
     payment_id VARCHAR NOT NULL,
     status TEXT NOT NULL,
-    total_price NUMERIC NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
