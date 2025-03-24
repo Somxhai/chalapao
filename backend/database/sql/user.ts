@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS
     email VARCHAR NOT NULL,
     email_verified BOOLEAN NULL DEFAULT false,
     user_image VARCHAR,
-    user_rating FLOAT DEFAULT 0 CHECK (user_rating BETWEEN 0 AND 5),
     created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     user_type TEXT NOT NULL DEFAULT 'renter' CHECK (user_type IN ('renter', 'lessor')),
