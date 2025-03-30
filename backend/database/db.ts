@@ -5,6 +5,7 @@ import {
   CREATE_ITEM_TABLE,
   CREATE_KEYWORD_TABLE,
   CREATE_PAYMENT_TABLE,
+  CREATE_RENTAL_ADDRESS_TABLE,
   CREATE_RENTAL_TABLE,
   CREATE_REVIEW_IMAGE_TABLE,
   CREATE_REVIEW_USER_TABLE,
@@ -60,6 +61,7 @@ try {
   await client.queryArray(CREATE_REVIEW_IMAGE_TABLE);
   await client.queryArray(CREATE_KEYWORD_TABLE);
   await client.queryArray(CREATE_ITEM_IMAGE_TABLE);
+  await client.queryArray(CREATE_RENTAL_ADDRESS_TABLE);
 
   const tables = [
     "user",
