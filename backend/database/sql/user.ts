@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS
     email TEXT NOT NULL,
     email_verified BOOLEAN NULL DEFAULT false,
     user_image TEXT,
-    created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
     user_type TEXT NOT NULL DEFAULT 'renter' CHECK (user_type IN ('renter', 'lessor')),
 
     CONSTRAINT user_pkey PRIMARY KEY (id),
@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS
     identifier TEXT NOT NULL,
     value TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT verification_pkey PRIMARY KEY (id)
   );
 `;
@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS
     expires_at TIMESTAMPTZ NOT NULL,
     ip_address TEXT NULL,
     user_agent TEXT NULL,
-    created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT session_pkey PRIMARY KEY (id),
     CONSTRAINT session_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
@@ -55,13 +55,13 @@ CREATE TABLE IF NOT EXISTS
     provider_id TEXT NOT NULL,
     access_token TEXT NULL,
     refresh_token TEXT NULL,
-    access_token_expires_at TIMESTAMPTZ NULL,
-    refresh_token_expires_at TIMESTAMPTZ NULL,
+    access_token_expires_at TIMESTAMPZ,
+    refresh_token_expires_at TIMESTAMPZ,
     scope TEXT NULL,
     id_token TEXT NULL,
     password TEXT NULL,
-    created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT account_pkey PRIMARY KEY (id),
     CONSTRAINT account_user_fk FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
