@@ -22,14 +22,15 @@ CREATE TABLE IF NOT EXISTS "rental" (
     return_address UUID NOT NULL,
 
     payment_id UUID NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN 'pending', 'accepted', 'cancel'),
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'cancel')),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT rents FOREIGN KEY (renter_id) REFERENCES "user"(id) ON DELETE CASCADE,
-    CONSTRAINT delivery FOREIGN KEY (delivery_address) REFERENCES "address"(id) ON DELETE CASCADE,
+    CONSTRAINT delivery FOREIGN KEY (delivery_address) REFERENCES "rental_address"(id) ON DELETE CASCADE,
+    CONSTRAINT return FOREIGN KEY (return_address) REFERENCES "rental_address"(id) ON DELETE CASCADE,
     CONSTRAINT payment_by FOREIGN KEY (payment_id) REFERENCES "payment"(id) ON DELETE CASCADE,
     CONSTRAINT involves FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE
 
@@ -66,7 +67,7 @@ CREATE TABLE IF NOT EXISTS
     description TEXT,
     rental_terms TEXT NOT NULL,
     penalty_terms TEXT NOT NULL,
-    item_status TEXT NOT NULL,
+    item_status TEXT NOT NULL CHECK (item_status IN ('available', 'rented', 'unavailable')),
     price_per_day NUMERIC NOT NULL,
     category_id UUID NOT NULL,
     item_rating FLOAT DEFAULT 0 CHECK (item_rating BETWEEN 0 AND 5),
@@ -74,7 +75,7 @@ CREATE TABLE IF NOT EXISTS
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT owns FOREIGN KEY (owner_id) REFERENCES "user"(id) ON DELETE CASCADE,
-    CONSTRAINT in FOREIGN KEY (category_id) REFERENCES "category"(id) ON DELETE CASCADE
+    CONSTRAINT in_category FOREIGN KEY (category_id) REFERENCES "category"(id) ON DELETE CASCADE
   );
 `;
 
