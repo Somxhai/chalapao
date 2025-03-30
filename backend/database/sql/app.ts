@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS
   "payment" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     renter_id VARCHAR NOT NULL,
-    status TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
     total_price NUMERIC NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
@@ -15,8 +15,11 @@ export const CREATE_RENTAL_TABLE = `
 CREATE TABLE IF NOT EXISTS "rental" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     renter_id VARCHAR NOT NULL,
-    item_id VARCHAR NOT NULL,
+    item_id UUID NOT NULL,
+
     delivery_address VARCHAR NOT NULL,
+    return_address VARCHAR NOT NULL,
+
     payment_id VARCHAR NOT NULL,
     status TEXT NOT NULL,
     start_date DATE NOT NULL,
@@ -26,9 +29,30 @@ CREATE TABLE IF NOT EXISTS "rental" (
 
     CONSTRAINT rents FOREIGN KEY (renter_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT delivery FOREIGN KEY (delivery_address) REFERENCES "address"(id) ON DELETE CASCADE,
-    CONSTRAINT for FOREIGN KEY (payment_id) REFERENCES "payment"(id) ON DELETE CASCADE,
+    CONSTRAINT payment_by FOREIGN KEY (payment_id) REFERENCES "payment"(id) ON DELETE CASCADE,
     CONSTRAINT involves FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE
 
+  );
+`;
+
+export const CREATE_RENTAL_ADDRESS_TABLE = `
+CREATE TABLE IF NOT EXISTS
+  "rental_address" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    rental_id UUID NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('delivery', 'return')),
+
+    residence_info TEXT NOT NULL,
+    sub_district TEXT NOT NULL,
+    district TEXT NOT NULL,
+    province TEXT NOT NULL,
+    postal_code VARCHAR(10) NOT NULL,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT has FOREIGN KEY (rental_id) REFERENCES "rental"(id) ON DELETE CASCADE,
+    CONSTRAINT unique_rental_address UNIQUE (rental_id, type)
   );
 `;
 
@@ -100,7 +124,7 @@ CREATE TABLE IF NOT EXISTS
   "review_image" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     image_url TEXT NOT NULL,
-    CONSTRAINT for FOREIGN KEY (id) REFERENCES "review"(id) ON DELETE CASCADE
+    CONSTRAINT image_for FOREIGN KEY (id) REFERENCES "review"(id) ON DELETE CASCADE
   );
 `;
 
@@ -109,7 +133,7 @@ CREATE TABLE IF NOT EXISTS "keyword"(
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     item_id UUID NOT NULL,
     keyword TEXT NOT NULL,
-    CONSTRAINT for FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE
+    CONSTRAINT keyword_for FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE
   )
 `;
 export const CREATE_ITEM_IMAGE_TABLE = `
@@ -118,6 +142,6 @@ CREATE TABLE IF NOT EXISTS
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     item_id UUID NOT NULL,
     image_url TEXT NOT NULL,
-    CONSTRAINT for FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE
+    CONSTRAINT image_for FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE
   )
 `;
