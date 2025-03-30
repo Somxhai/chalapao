@@ -87,25 +87,28 @@ export const getAllRatingByUserId = (userId: string) => {
     WHERE user_id = '${userId}';
   `;
 };
-/*
+
 export const getAllReviewsForUser = (userId: string) => {
   return `
-
+    SELECT * FROM "review_user" 
+    WHERE user_id = '${userId}'
   `;
 };
 
 export const getAllReviewsForItem = (itemId: string) => {
   return `
-
+    SELECT * FROM "review_item" 
+    WHERE item_id = '${itemId}'
   `;
 };
 
+
 export const deleteReviewById = (reviewId: string) => {
-    return `
-    
-    `;
+  return `
+    DELETE FROM "review_item" WHERE id = '${reviewId}';
+    DELETE FROM "review_user" WHERE id = '${reviewId}';
+  `;
 };
-*/
 
 export const addImageToReview = (reviewId: string, imageUrl: string) => {
   return `
@@ -121,13 +124,15 @@ export const getUserInfoByUserId = (userId: string) => {
     WHERE id = (SELECT user_info_id FROM "user" WHERE id = '${userId}');
   `;
 };
-/*
-export const createUserInfoByUserId = () => {
-  return `
 
-  `;
+export const createUserInfoByUserId = (userId: string, fullName: string, gender: string, birthDate: string, citizenId: string, phoneNumber: string | null) => {
+  return `
+    INSERT INTO "user_info" (id, full_name, gender, birth_date, citizen_id, phone_number, created_at, updated_at)
+    VALUES (gen_random_uuid(), '${fullName}', '${gender}', '${birthDate}', '${citizenId}', ${phoneNumber ? `'${phoneNumber}'` : 'NULL'}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    `;
 };
-*/
+
+
 export const updateUserInfoByUserId = (userId: string, fullName: string, gender: string, birthDate: string, citizenId: string, phoneNumber: string) => {
   return `
     UPDATE "user_info"
@@ -202,5 +207,29 @@ export const deleteRental = (rentalId: string) => {
   return `
     DELETE FROM "rental"
     WHERE id = '${rentalId}' AND status = 'canceled';
+  `;
+};
+
+// Payment Functions
+export const createPaymentForRental = (rentalId: string, status: string, totalPrice: number) => {
+  return `
+    INSERT INTO "payment" (renter_id, status, total_price, created_at, updated_at)
+    SELECT renter_id, '${status}', ${totalPrice}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    FROM "rental" WHERE id = '${rentalId}';
+  `;
+};
+
+export const deletePayment = (paymentId: string, status: string) => {
+  return `
+    DELETE FROM "payment" 
+    WHERE id = '${paymentId}' 
+  `;
+};
+
+export const updatePaymentStatus = (paymentId: string, newStatus: string) => {
+  return `
+    UPDATE "payment"
+    SET status = '${newStatus}', updated_at = CURRENT_TIMESTAMP
+    WHERE id = '${paymentId}';
   `;
 };
