@@ -1,7 +1,8 @@
 export const CREATE_USER_INFO_TABLE = `CREATE TABLE IF NOT EXISTS
   "user_info" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    full_name TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
     gender VARCHAR(1) CHECK (gender IN ('M', 'F', 'O')),
     birth_date DATE NOT NULL,
     citizen_id VARCHAR(13) UNIQUE NOT NULL,
@@ -15,13 +16,14 @@ CREATE TABLE IF NOT EXISTS
   "address" (
     id UUID DEFAULT gen_random_uuid(),
     user_id VARCHAR NOT NULL,
-    primary_flag INT NOT NULL,
-    delivary_flag INT NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT false,
     residence_info TEXT NOT NULL,
-    subdistrict TEXT NOT NULL,
+    sub_district TEXT NOT NULL,
     district TEXT NOT NULL,
     province TEXT NOT NULL,
     postal_code TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT has FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
