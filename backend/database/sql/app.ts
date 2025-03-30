@@ -2,11 +2,12 @@ export const CREATE_PAYMENT_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "payment" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    renter_id VARCHAR NOT NULL,
+    renter_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
     total_price NUMERIC NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
     CONSTRAINT make FOREIGN KEY (renter_id) REFERENCES "user"(id) ON DELETE CASCADE
   );
 `;
@@ -14,18 +15,18 @@ CREATE TABLE IF NOT EXISTS
 export const CREATE_RENTAL_TABLE = `
 CREATE TABLE IF NOT EXISTS "rental" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    renter_id VARCHAR NOT NULL,
+    renter_id TEXT NOT NULL,
     item_id UUID NOT NULL,
 
-    delivery_address VARCHAR NOT NULL,
-    return_address VARCHAR NOT NULL,
+    delivery_address UUID NOT NULL,
+    return_address UUID NOT NULL,
 
-    payment_id VARCHAR NOT NULL,
-    status TEXT NOT NULL,
+    payment_id UUID NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN 'pending', 'accepted', 'cancel'),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT rents FOREIGN KEY (renter_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT delivery FOREIGN KEY (delivery_address) REFERENCES "address"(id) ON DELETE CASCADE,
@@ -49,7 +50,7 @@ CREATE TABLE IF NOT EXISTS
     postal_code VARCHAR(10) NOT NULL,
 
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT has FOREIGN KEY (rental_id) REFERENCES "rental"(id) ON DELETE CASCADE,
     CONSTRAINT unique_rental_address UNIQUE (rental_id, type)
@@ -60,7 +61,7 @@ export const CREATE_ITEM_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "item" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    owner_id VARCHAR NOT NULL,
+    owner_id TEXT NOT NULL,
     item_name TEXT NOT NULL,
     description TEXT,
     rental_terms TEXT NOT NULL,
@@ -70,7 +71,7 @@ CREATE TABLE IF NOT EXISTS
     category_id UUID NOT NULL,
     item_rating FLOAT DEFAULT 0 CHECK (item_rating BETWEEN 0 AND 5),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT owns FOREIGN KEY (owner_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT in FOREIGN KEY (category_id) REFERENCES "category"(id) ON DELETE CASCADE
@@ -91,12 +92,12 @@ export const CREATE_REVIEW_USER_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "review_user" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    reviewer_id VARCHAR NOT NULL,
-    user_id VARCHAR NOT NULL,
+    reviewer_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     rating FLOAT CHECK (rating BETWEEN 0 AND 5),
     comment TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT target_user_review FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT review_by FOREIGN KEY (reviewer_id) REFERENCES "user"(id) ON DELETE CASCADE
@@ -107,12 +108,12 @@ export const CREATE_REVIEW_ITEM_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "review_item" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    reviewer_id VARCHAR NOT NULL,
+    reviewer_id TEXT NOT NULL,
     item_id UUID NOT NULL,
     rating FLOAT CHECK (rating BETWEEN 0 AND 5),
     comment TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT target_item_review FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE,
     CONSTRAINT review_by FOREIGN KEY (reviewer_id) REFERENCES "user"(id) ON DELETE CASCADE

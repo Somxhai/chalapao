@@ -1,12 +1,12 @@
 export const CREATE_USER_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "user" (
-    id VARCHAR NOT NULL,
+    id TEXT NOT NULL,
     user_info_id UUID DEFAULT gen_random_uuid(),
-    name VARCHAR NOT NULL,
-    email VARCHAR NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
     email_verified BOOLEAN NULL DEFAULT false,
-    user_image VARCHAR,
+    user_image TEXT,
     created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     user_type TEXT NOT NULL DEFAULT 'renter' CHECK (user_type IN ('renter', 'lessor')),
@@ -20,9 +20,9 @@ CREATE TABLE IF NOT EXISTS
 export const CREATE_VERIFICATION_TABLE = `
 CREATE TABLE IF NOT EXISTS
   verification (
-    id VARCHAR NOT NULL,
-    identifier VARCHAR NOT NULL,
-    value VARCHAR NOT NULL,
+    id TEXT NOT NULL,
+    identifier TEXT NOT NULL,
+    value TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,12 +33,12 @@ CREATE TABLE IF NOT EXISTS
 export const CREATE_SESSION_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "session" (
-    id VARCHAR NOT NULL,
-    user_id VARCHAR NOT NULL,
-    token VARCHAR NOT NULL,
+    id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    token TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
-    ip_address VARCHAR NULL,
-    user_agent VARCHAR NULL,
+    ip_address TEXT NULL,
+    user_agent TEXT NULL,
     created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT session_pkey PRIMARY KEY (id),
@@ -49,17 +49,17 @@ CREATE TABLE IF NOT EXISTS
 export const CREATE_ACCOUNT_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "account" (
-    id VARCHAR NOT NULL,
-    user_id VARCHAR NOT NULL,
-    account_id VARCHAR NOT NULL,
-    provider_id VARCHAR NOT NULL,
-    access_token VARCHAR NULL,
-    refresh_token VARCHAR NULL,
+    id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    provider_id TEXT NOT NULL,
+    access_token TEXT NULL,
+    refresh_token TEXT NULL,
     access_token_expires_at TIMESTAMPTZ NULL,
     refresh_token_expires_at TIMESTAMPTZ NULL,
-    scope VARCHAR NULL,
-    id_token VARCHAR NULL,
-    password VARCHAR NULL,
+    scope TEXT NULL,
+    id_token TEXT NULL,
+    password TEXT NULL,
     created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT account_pkey PRIMARY KEY (id),
