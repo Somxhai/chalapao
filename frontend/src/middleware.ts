@@ -12,10 +12,10 @@ export async function middleware(request: NextRequest) {
         },
     });
 
-    if (!session) {
-        // DOCS: change url if needed
-        return NextResponse.redirect(new URL("/sign-in", request.url));
-    }
+    // if (!session) {
+    //     // DOCS: change url if needed
+    //     return NextResponse.redirect(new URL("/sign-in", request.url));
+    // }
 
     return NextResponse.next();
 }
