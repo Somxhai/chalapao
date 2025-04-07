@@ -8,6 +8,7 @@ import {
   CREATE_RENTAL_ADDRESS_TABLE,
   CREATE_RENTAL_TABLE,
   CREATE_REVIEW_IMAGE_TABLE,
+  CREATE_REVIEW_ITEM_TABLE,
   CREATE_REVIEW_USER_TABLE,
 } from "./sql/app.ts";
 
@@ -45,23 +46,27 @@ export const client = await pool.connect();
 try {
   await client.queryArray(CREATE_UPDATE_AT_TRIGGER);
 
-  await client.queryArray(CREATE_USER_TABLE);
+  await client.queryArray(CREATE_USER_INFO_TABLE); // Needed for user
+  await client.queryArray(CREATE_USER_TABLE); // Needed for session, account, address, review, payment, item
   await client.queryArray(CREATE_VERIFICATION_TABLE);
   await client.queryArray(CREATE_SESSION_TABLE);
   await client.queryArray(CREATE_ACCOUNT_TABLE);
 
-  await client.queryArray(CREATE_USER_INFO_TABLE);
-  await client.queryArray(CREATE_ADDRESS_TABLE);
+  await client.queryArray(CREATE_ADDRESS_TABLE); // Depends on user
 
-  await client.queryArray(CREATE_CATEGORY_TABLE);
-  await client.queryArray(CREATE_ITEM_TABLE);
-  await client.queryArray(CREATE_RENTAL_TABLE);
-  await client.queryArray(CREATE_PAYMENT_TABLE);
-  await client.queryArray(CREATE_REVIEW_USER_TABLE);
-  await client.queryArray(CREATE_REVIEW_IMAGE_TABLE);
-  await client.queryArray(CREATE_KEYWORD_TABLE);
-  await client.queryArray(CREATE_ITEM_IMAGE_TABLE);
-  await client.queryArray(CREATE_RENTAL_ADDRESS_TABLE);
+  await client.queryArray(CREATE_CATEGORY_TABLE); // Needed for item
+  await client.queryArray(CREATE_ITEM_TABLE); // Needed for rental, review_item, keyword, item_image
+
+  await client.queryArray(CREATE_PAYMENT_TABLE); // Needed for rental
+  await client.queryArray(CREATE_RENTAL_ADDRESS_TABLE); // Needed for rental
+  await client.queryArray(CREATE_RENTAL_TABLE); // Depends on user, item, payment, rental_address
+
+  await client.queryArray(CREATE_REVIEW_USER_TABLE); // (Assuming it's a base table for review_user and review_item)
+  await client.queryArray(CREATE_REVIEW_ITEM_TABLE); // Depends on user, item
+  await client.queryArray(CREATE_REVIEW_IMAGE_TABLE); // Depends on review
+
+  await client.queryArray(CREATE_KEYWORD_TABLE); // Depends on item
+  await client.queryArray(CREATE_ITEM_IMAGE_TABLE); // Depends on item
 
   const tables = [
     "user",
@@ -72,6 +77,7 @@ try {
     "rental",
     "payment",
     "review",
+    "review_image",
   ];
 
   for (const table of tables) {
