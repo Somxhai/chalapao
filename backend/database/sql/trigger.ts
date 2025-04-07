@@ -9,9 +9,9 @@ export const CREATE_UPDATE_AT_TRIGGER = `
 `;
 
 export const createUpdateAtTrigger = (table: string) => `
-    CREATE TRIGGER update_${table}
-    BEFORE UPDATE ON "${table}"
-    FOR EACH ROW
-    EXECUTE FUNCTION update_timestamp();
+  DROP TRIGGER IF EXISTS update_${table} ON "${table}";
+  CREATE TRIGGER update_${table}
+  BEFORE UPDATE ON "${table}"
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamp();
 `;
-
