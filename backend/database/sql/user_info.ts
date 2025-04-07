@@ -15,7 +15,7 @@ export const CREATE_ADDRESS_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "address" (
     id UUID DEFAULT gen_random_uuid(),
-    user_id TEXT NOT NULL,
+    user_id UUID NOT NULL,
     is_primary BOOLEAN NOT NULL DEFAULT false,
     residence_info TEXT NOT NULL,
     sub_district TEXT NOT NULL,
