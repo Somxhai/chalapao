@@ -28,7 +28,7 @@ import {
   createUpdateAtTrigger,
 } from "./sql/trigger.ts";
 
-const pool = new Pool(
+export const pool = new Pool(
   {
     database: Deno.env.get("PGDATABASE") || "postgres",
     hostname: Deno.env.get("PGHOST") || "localhost",

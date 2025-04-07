@@ -2,15 +2,19 @@
   "version": "4",
   "specifiers": {
     "jsr:@hono/hono@^4.6.20": "4.7.0",
+    "npm:@types/bun@^1.2.8": "1.2.8",
     "npm:@types/node@*": "22.5.4",
     "npm:@types/pg@^8.11.11": "8.11.11",
+    "npm:hono@^4.7.5": "4.7.5",
     "npm:ley@*": "0.8.1",
     "npm:ley@~0.8.1": "0.8.1",
     "npm:pg@*": "8.13.3",
     "npm:pg@^8.13.3": "8.13.3",
+    "npm:pg@^8.14.1": "8.14.1",
     "npm:postgres-migrations@^5.3.0": "5.3.0",
     "npm:postgres@3.4.5": "3.4.5",
-    "npm:tsm@^2.3.0": "2.3.0"
+    "npm:tsm@^2.3.0": "2.3.0",
+    "npm:uuid@^11.1.0": "11.1.0"
   },
   "jsr": {
     "@hono/hono@4.7.0": {
@@ -24,18 +28,43 @@
     "@esbuild/linux-loong64@0.15.18": {
       "integrity": "sha512-L4jVKS82XVhw2nvzLg/19ClLWg0y27ulRwuP7lcyL6AbUWB5aPglXY3M21mauDQMDfRLs8cQmeT03r/+X3cZYQ=="
     },
+    "@types/bun@1.2.8": {
+      "integrity": "sha512-t8L1RvJVUghW5V+M/fL3Thbxcs0HwNsXsnTEBEfEVqGteiJToOlZ/fyOEaR1kZsNqnu+3XA4RI/qmnX4w6+S+w==",
+      "dependencies": [
+        "bun-types"
+      ]
+    },
+    "@types/node@22.12.0": {
+      "integrity": "sha512-Fll2FZ1riMjNmlmJOdAyY5pUbkftXslB5DgEzlIuNaiWhXd00FhWxVC/r4yV/4wBb9JfImTu+jiSvXTkJ7F/gA==",
+      "dependencies": [
+        "undici-types@6.20.0"
+      ]
+    },
     "@types/node@22.5.4": {
       "integrity": "sha512-FDuKUJQm/ju9fT/SeX/6+gBzoPzlVCzfzmGkwKvRHQVxi4BntVbyIwf6a4Xn62mrvndLiml6z/UBXIdEVjQLXg==",
       "dependencies": [
-        "undici-types"
+        "undici-types@6.19.8"
       ]
     },
     "@types/pg@8.11.11": {
       "integrity": "sha512-kGT1qKM8wJQ5qlawUrEkXgvMSXoV213KfMGXcwfDwUIfUHXqXYXOfS1nE1LINRJVVVx5wCm70XnFlMHaIcQAfw==",
       "dependencies": [
-        "@types/node",
-        "pg-protocol",
+        "@types/node@22.5.4",
+        "pg-protocol@1.7.1",
         "pg-types@4.0.2"
+      ]
+    },
+    "@types/ws@8.18.1": {
+      "integrity": "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==",
+      "dependencies": [
+        "@types/node@22.12.0"
+      ]
+    },
+    "bun-types@1.2.7": {
+      "integrity": "sha512-P4hHhk7kjF99acXqKvltyuMQ2kf/rzIw3ylEDpCxDS9Xa0X0Yp/gJu/vDCucmWpiur5qJ0lwB2bWzOXa2GlHqA==",
+      "dependencies": [
+        "@types/node@22.12.0",
+        "@types/ws"
       ]
     },
     "esbuild-android-64@0.15.18": {
@@ -125,6 +154,9 @@
         "esbuild-windows-arm64"
       ]
     },
+    "hono@4.7.5": {
+      "integrity": "sha512-fDOK5W2C1vZACsgLONigdZTRZxuBqFtcKh7bUQ5cVSbwI2RWjloJDcgFOVzbQrlI6pCmhlTsVYZ7zpLj4m4qMQ=="
+    },
     "kleur@4.1.5": {
       "integrity": "sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ=="
     },
@@ -161,11 +193,20 @@
     "pg-pool@3.7.1_pg@8.13.3": {
       "integrity": "sha512-xIOsFoh7Vdhojas6q3596mXFsR8nwBQBXX5JiV7p9buEVAGqYL4yFzclON5P9vFrpu1u7Zwl2oriyDa89n0wbw==",
       "dependencies": [
-        "pg"
+        "pg@8.13.3"
+      ]
+    },
+    "pg-pool@3.8.0_pg@8.14.1": {
+      "integrity": "sha512-VBw3jiVm6ZOdLBTIcXLNdSotb6Iy3uOCwDGFAksZCXmi10nyRvnP2v3jl4d+IsLYRyXf6o9hIm/ZtUzlByNUdw==",
+      "dependencies": [
+        "pg@8.14.1"
       ]
     },
     "pg-protocol@1.7.1": {
       "integrity": "sha512-gjTHWGYWsEgy9MsY0Gp6ZJxV24IjDqdpTW7Eh0x+WfJLFsm/TJx1MzL6T0D88mBvkpxotCQ6TwW6N+Kko7lhgQ=="
+    },
+    "pg-protocol@1.8.0": {
+      "integrity": "sha512-jvuYlEkL03NRvOoyoRktBK7+qU5kOvlAwvmrH8sr3wbLrOdVWsRxQfz8mMy9sZFsqJ1hEWNfdWKI4SAmoL+j7g=="
     },
     "pg-types@2.2.0": {
       "integrity": "sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==",
@@ -194,8 +235,19 @@
       "dependencies": [
         "pg-cloudflare",
         "pg-connection-string",
-        "pg-pool",
-        "pg-protocol",
+        "pg-pool@3.7.1_pg@8.13.3",
+        "pg-protocol@1.7.1",
+        "pg-types@2.2.0",
+        "pgpass"
+      ]
+    },
+    "pg@8.14.1": {
+      "integrity": "sha512-0TdbqfjwIun9Fm/r89oB7RFQ0bLgduAhiIqIXOsyKoiC/L54DbuAAzIEN/9Op0f1Po9X7iCPXGoa/Ah+2aI8Xw==",
+      "dependencies": [
+        "pg-cloudflare",
+        "pg-connection-string",
+        "pg-pool@3.8.0_pg@8.14.1",
+        "pg-protocol@1.8.0",
         "pg-types@2.2.0",
         "pgpass"
       ]
@@ -239,7 +291,7 @@
     "postgres-migrations@5.3.0": {
       "integrity": "sha512-gnTHWJZVWbW8T3mXIxJm1JRU853TqBVWkhgfsTJr7zqT3VexjRmJj9kNi96rVhfTezDU4FVW6pf701kLOZiKIA==",
       "dependencies": [
-        "pg",
+        "pg@8.13.3",
         "sql-template-strings"
       ]
     },
@@ -272,6 +324,12 @@
     },
     "undici-types@6.19.8": {
       "integrity": "sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw=="
+    },
+    "undici-types@6.20.0": {
+      "integrity": "sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg=="
+    },
+    "uuid@11.1.0": {
+      "integrity": "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A=="
     },
     "xtend@4.0.2": {
       "integrity": "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="
@@ -496,7 +554,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@hono/hono@^4.6.20"
+      "jsr:@hono/hono@^4.6.20",
+      "npm:uuid@^11.1.0"
     ]
   }
 }
