@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS
   "account" (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
-    account_id UUID NOT NULL,
-    provider_id UUID NOT NULL,
+    account_id TEXT NOT NULL,
+    provider_id TEXT NOT NULL,
     access_token TEXT NULL,
     refresh_token TEXT NULL,
     access_token_expires_at TIMESTAMP,
