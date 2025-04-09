@@ -1,4 +1,4 @@
-export interface Keyword {
+export interface KeywordType {
 	id: string; // UUID, รหัสคีย์เวิร์ด, Example: 550e8400-e29b-41d4-a716-446655440000
 	item_id: string; // UUID, รหัสสินค้า, Example: 550e8400-e29b-41d4-a716-446655440000
 	keyword: string; // TEXT, คีย์เวิร์ด, Example: Juad

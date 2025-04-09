@@ -1,4 +1,4 @@
-export interface Payment {
+export interface PaymentType {
 	id: string; // UUID, รหัสการชำระเงิน
 	renter_id: string; // VARCHAR(10), รหัสการเช่า
 	total_price: number; // NUMERIC, จำนวนเงิน

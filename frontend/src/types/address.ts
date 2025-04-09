@@ -1,4 +1,4 @@
-export type Address = {
+export type AddressType = {
 	id: string; // UUID, รหัสที่อยู่
 	user_id: string; // VARCHAR, รหัสผู้ใช้
 	is_primary: boolean; // BOOLEAN, เป็นที่อยู่หลัก

@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	Dropdown,
 	DropdownDivider,
@@ -5,8 +7,9 @@ import {
 	DropdownItem,
 	NavbarToggle,
 } from "flowbite-react";
+import { UserType } from "@/types/user";
 
-const Menu = () => {
+const Menu = ({ user }: { user: UserType }) => {
 	return (
 		<>
 			<button
@@ -71,7 +74,6 @@ const Menu = () => {
 					/>
 				</svg>
 			</button>
-
 			<Dropdown
 				arrowIcon={false}
 				inline
@@ -103,16 +105,18 @@ const Menu = () => {
 				)}
 			>
 				<DropdownHeader>
-					<span className="block text-sm">Bonnie Green</span>
+					<span className="block text-sm">
+						{user.first_name} {user.last_name}
+					</span>
 					<span className="block truncate text-sm font-medium">
-						name@flowbite.com
+						{user.email}
 					</span>
 				</DropdownHeader>
-				<DropdownItem>Dashboard</DropdownItem>
-				<DropdownItem>Settings</DropdownItem>
-				<DropdownItem>Earnings</DropdownItem>
+				<DropdownItem>Profile</DropdownItem>
 				<DropdownDivider />
-				<DropdownItem>Sign out</DropdownItem>
+				<DropdownItem>Sign Out</DropdownItem>
+				{/* <DropdownItem>Sign In</DropdownItem>
+				<DropdownItem>Sign Up</DropdownItem> */}
 			</Dropdown>
 
 			<NavbarToggle />

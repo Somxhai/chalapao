@@ -1,4 +1,4 @@
-export interface UserReview {
+export interface UserReviewType {
 	id: string; // UUID, รหัสที่อยู่
 	reviewer_id: string; // VARCHAR(10), รหัสผู้ใช้
 	user_id: string; // VARCHAR(10), รหัสผู้ใช้

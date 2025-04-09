@@ -1,4 +1,4 @@
-export interface ItemImage {
+export interface ItemImageType {
 	id: string; // UUID, รหัสรูปภาพสินค้า, Example: 550e8400-e29b-41d4-a716-446655440000
 	item_id: string; // UUID, รหัสสินค้า, Example: 550e8400-e29b-41d4-a716-446655440000
 	image_url: string; // VARCHAR(1000), url รูปภาพ, Example: https://juad.com

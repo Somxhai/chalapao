@@ -1,8 +1,7 @@
-export interface Rental {
+export interface RentalType {
 	id: string; // UUID - รหัสการชำระเงิน
 	renter_id: string; // VARCHAR(10) - รหัสการเช่า
 	item_id: string; // UUID - รหัสผู้ใช้
-	delivery_address: string; // UUID - รหัสที่อยู่
 	payment_id: string; // UUID - รหัสการชำระ
 	status: string; // TEXT - สถานะการชำระ
 	start_date: string; // DATE (YYYY-MM-DD) - วันที่เริ่มเช่า

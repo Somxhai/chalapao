@@ -1,3 +1,5 @@
+"use client";
+
 import { Dropdown, DropdownItem } from "flowbite-react";
 
 const Search = () => {
@@ -9,7 +11,7 @@ const Search = () => {
 					<button
 						id="dropdown-button"
 						data-dropdown-toggle="dropdown"
-						className="shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center bg-gray-100 border-y border-gray-300 rounded-s-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600"
+						className="shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center bg-gray-100 border border-gray-300 rounded-s-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600"
 						type="button"
 					>
 						All categories{" "}
@@ -44,7 +46,7 @@ const Search = () => {
 				<input
 					type="search"
 					id="search-dropdown"
-					className="block p-2.5 w-full z-20 text-sm bg-gray-50 rounded-e-lg border border-gray-300 focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-gray-500"
+					className="block p-2.5 w-full z-20 text-sm bg-gray-50 rounded-e-lg border-y border-gray-300 focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-gray-500"
 					placeholder="Search for items..."
 					required
 				/>
