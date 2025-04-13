@@ -2,18 +2,17 @@ import { UUIDTypes } from "uuid";
 
 // Item Interface
 export interface Item {
-  id: UUIDTypes;
+  id?: UUIDTypes;
   owner_id: string;
   item_name: string;
-  description: string;
+  description?: string;
   rental_terms: string;
   penalty_terms: string;
   item_status: "available" | "rented" | "unavailable";
   price_per_day: number;
-  category_id: UUIDTypes;
-  item_rating: number;
-  created_at: string;
-  updated_at: string;
+  category_id?: UUIDTypes;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Rental Interface
@@ -47,10 +46,10 @@ export interface RentalAddress {
 
 // Category Interface
 export interface Category {
-  id: UUIDTypes;
+  id?: UUIDTypes;
   name: string;
-  created_at: string;
-  updated_at: string | null;
+  created_at?: string;
+  updated_at?: string | null;
 }
 
 // Review User Interface
