@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS
     penalty_terms TEXT NOT NULL,
     item_status TEXT NOT NULL CHECK (item_status IN ('available', 'rented', 'unavailable')),
     price_per_day NUMERIC NOT NULL,
-    category_id UUID NOT NULL,
+    category_id UUID,
     item_rating INT DEFAULT 0 CHECK (item_rating BETWEEN 0 AND 5),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
