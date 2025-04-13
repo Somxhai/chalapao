@@ -1,4 +1,8 @@
-import { Pool } from "deno-postgres";
+// db/setup.ts
+import pg from "npm:pg";
+
+const { Pool } = pg;
+
 import {
   CREATE_CATEGORY_TABLE,
   CREATE_ITEM_IMAGE_TABLE,
@@ -29,44 +33,38 @@ import {
   createUpdateAtTrigger,
 } from "./sql/trigger.ts";
 
-export const pool = new Pool(
-  {
-    database: Deno.env.get("PGDATABASE") || "postgres",
-    hostname: Deno.env.get("PGHOST") || "localhost",
-    password: Deno.env.get("PGPASSWORD") || "",
-    user: Deno.env.get("PGUSERNAME") || "postgres",
-    port: parseInt(Deno.env.get("PGPORT") || "5432"),
-  },
-  20,
-  true,
-);
+export const pool = new Pool({
+  host: Deno.env.get("PGHOST") || "localhost",
+  port: parseInt(Deno.env.get("PGPORT") || "5439"),
+  user: Deno.env.get("PGUSERNAME") || "postgres",
+  password: Deno.env.get("PGPASSWORD") || "",
+  database: Deno.env.get("PGDATABASE") || "postgres",
+});
 
-export const client = await pool.connect();
+const client = await pool.connect();
 
 try {
-  await client.queryArray(CREATE_UPDATE_AT_TRIGGER);
+  await client.query(CREATE_UPDATE_AT_TRIGGER);
 
-  await client.queryArray(CREATE_USER_INFO_TABLE); // Needed for user
-  await client.queryArray(CREATE_USER_TABLE); // Needed for session, account, address, review, payment, item
-  await client.queryArray(CREATE_VERIFICATION_TABLE);
-  await client.queryArray(CREATE_SESSION_TABLE);
-  await client.queryArray(CREATE_ACCOUNT_TABLE);
+  await client.query(CREATE_USER_INFO_TABLE);
+  await client.query(CREATE_USER_TABLE);
+  await client.query(CREATE_VERIFICATION_TABLE);
+  await client.query(CREATE_SESSION_TABLE);
+  await client.query(CREATE_ACCOUNT_TABLE);
 
-  await client.queryArray(CREATE_ADDRESS_TABLE); // Depends on user
+  await client.query(CREATE_ADDRESS_TABLE);
 
-  await client.queryArray(CREATE_CATEGORY_TABLE); // Needed for item
-  await client.queryArray(CREATE_ITEM_TABLE); // Needed for rental, review_item, keyword, item_image
+  await client.query(CREATE_CATEGORY_TABLE);
+  await client.query(CREATE_ITEM_TABLE);
+  await client.query(CREATE_PAYMENT_TABLE);
+  await client.query(CREATE_RENTAL_ADDRESS_TABLE);
+  await client.query(CREATE_RENTAL_TABLE);
 
-  await client.queryArray(CREATE_PAYMENT_TABLE); // Needed for rental
-  await client.queryArray(CREATE_RENTAL_ADDRESS_TABLE); // Needed for rental
-  await client.queryArray(CREATE_RENTAL_TABLE); // Depends on user, item, payment, rental_address
-
-  await client.queryArray(CREATE_REVIEW_USER_TABLE); // (Assuming it's a base table for review_user and review_item)
-  await client.queryArray(CREATE_REVIEW_ITEM_TABLE); // Depends on user, item
-  await client.queryArray(CREATE_REVIEW_IMAGE_TABLE); // Depends on review
-
-  await client.queryArray(CREATE_KEYWORD_TABLE); // Depends on item
-  await client.queryArray(CREATE_ITEM_IMAGE_TABLE); // Depends on item
+  await client.query(CREATE_REVIEW_USER_TABLE);
+  await client.query(CREATE_REVIEW_ITEM_TABLE);
+  await client.query(CREATE_REVIEW_IMAGE_TABLE);
+  await client.query(CREATE_KEYWORD_TABLE);
+  await client.query(CREATE_ITEM_IMAGE_TABLE);
 
   const tables = [
     "user",
@@ -82,7 +80,7 @@ try {
 
   for (const table of tables) {
     const triggerQuery = createUpdateAtTrigger(table);
-    await client.queryArray(triggerQuery);
+    await client.query(triggerQuery);
   }
 } catch (error) {
   console.error("Error creating tables:", error);
