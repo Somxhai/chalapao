@@ -4,7 +4,7 @@ export const data: RentalType[] = [
 	{
 		id: "1a2b3c4d-5e6f-7g8h-9i0j-1a2b3c4d5e6f",
 		renter_id: "1111111111",
-		item_id: "123e4567-e89b-12d3-a456-426614174000",
+		item_id: "550e8400-e29b-41d4-a716-446655440000",
 		payment_id: "1e7b9c8e-8f3b-4a2b-9c8e-1e7b9c8e8f3b",
 		status: "Active",
 		start_date: "2023-10-01",
@@ -25,7 +25,7 @@ export const data: RentalType[] = [
 	{
 		id: "2b3c4d5e-6f7g-8h9i-0j1a-2b3c4d5e6f7g",
 		renter_id: "1111111111",
-		item_id: "223e4567-e89b-12d3-a456-426614174001",
+		item_id: "550e8400-e29b-41d4-a716-446655440001",
 		payment_id: "2a6d8c9f-7b4a-3c2d-8a6d-2a6d8c9f7b4a",
 		status: "Pending",
 		start_date: "2023-10-05",
