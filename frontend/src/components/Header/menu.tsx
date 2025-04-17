@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
 	Dropdown,
 	DropdownDivider,
@@ -112,9 +113,23 @@ const Menu = ({ user }: { user: UserType }) => {
 						{user.email}
 					</span>
 				</DropdownHeader>
-				<DropdownItem>Profile</DropdownItem>
+				
+				<DropdownItem>
+				<Link href="/account" className="block w-full text-left">
+					Account
+				</Link>
+				</DropdownItem>
+
+				<DropdownItem>
+					<Link href="/profile" className="block w-full text-left">
+						Profile
+					</Link>
+				</DropdownItem>
+
 				<DropdownDivider />
+
 				<DropdownItem>Sign Out</DropdownItem>
+
 				{/* <DropdownItem>Sign In</DropdownItem>
 				<DropdownItem>Sign Up</DropdownItem> */}
 			</Dropdown>
