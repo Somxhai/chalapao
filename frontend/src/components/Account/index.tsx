@@ -97,7 +97,7 @@ const AccountPage = () => {
 										</button>
 									</div>
 									<p className="text-gray-500 mt-1">
-										{address.district || address.subdistrict}
+										{address.residence_info || address.subdistrict}
 									</p>
 								</div>
 							))}
