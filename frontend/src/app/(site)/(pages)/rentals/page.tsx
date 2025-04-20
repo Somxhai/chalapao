@@ -179,20 +179,20 @@ const RentalCard = ({ rental }: { rental: RentalItem }) => (
       <div className="flex flex-col justify-between text-right items-end gap-1">
         <span className="text-sm text-gray-600">{rental.status}</span>
         <span className="text-lg font-bold">{rental.price.toLocaleString()} บาท</span>
-        <div className="flex flex-wrap gap-1 justify-end">
-		{rental.actions?.map((action, i) =>
-    action.href ? (
-      <a key={i} href={action.href}>
-        <Button size="xs" color="gray">{action.label}</Button>
-      </a>
-    ) : (
-      <Button key={i} size="xs" color="gray" onClick={action.onClick}>
-        {action.label}
-      </Button>
-    )
-  )}
+        <div className="flex flex-wrap gap-1 justify-end mt-auto">
+          {rental.actions?.map((action, i) =>
+            action.href ? (
+              <a key={i} href={action.href}>
+          <Button size="xs" color="gray">{action.label}</Button>
+              </a>
+            ) : (
+              <Button key={i} size="xs" color="gray" onClick={action.onClick}>
+          {action.label}
+              </Button>
+            )
+          )}
           {rental.rating !== undefined && (
-            <div className="text-yellow-500 text-sm">
+            <div className="text-yellow-500 text-sm mt-1">
               {'★'.repeat(rental.rating)}{'☆'.repeat(5 - rental.rating)}
             </div>
           )}
@@ -301,7 +301,7 @@ const ScrollableRentalList = ({
       rentals.map((r) => <RentalCard key={r.id} rental={r} />)
     ) : (
 	<div className="flex items-center justify-center h-full">
-	  <p className="text-gray-500 text-lg">ยังไม่มีรายการ</p>
+	  <p className="text-gray-500 text-lg">ไม่มีรายการ</p>
 	</div>
     )}
   </div>
