@@ -1,17 +1,19 @@
 import { assertEquals, assertExists } from "jsr:@std/assert";
 import { categoryApp } from "../handler/category.ts";
-import { createAdmin, createUser } from "./utils.ts";
+import { createUser } from "./utils.ts";
 import { Category } from "../type/app.ts";
 
 Deno.test("Category routes", async (t) => {
-  const { token, user, cookie } = await createUser();
-  const admin = await createAdmin();
+  const { token, cookie, user } = await createUser();
+
+  const { token: adminToken, user: adminUser, cookie: adminCookie } =
+    await createUser("admin");
 
   if (!user || !token || !cookie) {
     throw new Error("User creation failed");
   }
 
-  if (!admin || !admin.token || !admin.user || !admin.cookie) {
+  if (!adminToken || !adminUser || !adminCookie) {
     throw new Error("Admin creation failed");
   }
 
@@ -34,7 +36,7 @@ Deno.test("Category routes", async (t) => {
       method: "POST",
       body: JSON.stringify(category),
       headers: {
-        cookie: admin.cookie,
+        cookie: adminCookie,
         "Content-Type": "application/json",
       },
     });
@@ -72,7 +74,7 @@ Deno.test("Category routes", async (t) => {
       method: "PUT",
       body: JSON.stringify(updatedCategory),
       headers: {
-        cookie: admin.cookie,
+        cookie: adminCookie,
         "Content-Type": "application/json",
       },
     });
@@ -87,7 +89,7 @@ Deno.test("Category routes", async (t) => {
     const res = await categoryApp.request(`/${createdCategory.id}`, {
       method: "DELETE",
       headers: {
-        cookie: admin.cookie,
+        cookie: adminCookie,
         "Content-Type": "application/json",
       },
     });
