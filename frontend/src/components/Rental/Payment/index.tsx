@@ -115,7 +115,7 @@ const Payment = () => {
 				<h2 className="text-base font-semibold mb-4">
 					Payment Methods
 				</h2>
-				<div className="flex justify-center gap-6">
+				<div className="flex justify-center gap-6 flex-wrap">
 					{[
 						{
 							name: "TrueMoney",
@@ -132,13 +132,11 @@ const Payment = () => {
 								onClick={() => setSelectedMethod(method.name)}
 								className="flex items-center gap-2 cursor-pointer"
 							>
-								{/* Dot on the left */}
 								<div
 									className={`w-3 h-3 rounded-full ${
 										isSelected ? "bg-black" : "bg-gray-400"
 									}`}
 								/>
-								{/* Box with icon and label */}
 								<div
 									className={`p-4 rounded-md shadow-sm border ${
 										isSelected
@@ -149,7 +147,7 @@ const Payment = () => {
 									<img
 										src={method.icon}
 										alt={method.name}
-										className="h-12 mb-1 object-contain" // 👈 เปลี่ยนจาก h-6 เป็น h-10
+										className="h-12 mb-1 object-contain"
 									/>
 								</div>
 							</div>
@@ -162,24 +160,100 @@ const Payment = () => {
 				<h2 className="text-base font-semibold mb-2">
 					Billing details
 				</h2>
-				{selectedMethod === "TrueMoney" && (
-					<div className="max-w-xs mx-auto">
-						<label
-							htmlFor="phone"
-							className="text-sm font-medium block text-left mb-1"
-						>
-							TrueMoneyWallet
-						</label>
-						<input
-							type="text"
-							id="phone"
-							placeholder="หมายเลขโทรศัพท์"
-							className="w-full border px-3 py-2 rounded text-sm"
-							value={phoneNumber}
-							onChange={(e) => setPhoneNumber(e.target.value)}
-						/>
-					</div>
-				)}
+				<div className="max-w-xs mx-auto space-y-4 text-left">
+					{selectedMethod === "TrueMoney" && (
+						<>
+							<label
+								htmlFor="phone"
+								className="text-sm font-medium block"
+							>
+								หมายเลขโทรศัพท์ (TrueMoney Wallet)
+							</label>
+							<input
+								type="text"
+								id="phone"
+								placeholder="0812345678"
+								className="w-full border px-3 py-2 rounded text-sm"
+								value={phoneNumber}
+								onChange={(e) => setPhoneNumber(e.target.value)}
+							/>
+						</>
+					)}
+
+					{selectedMethod === "ThaiQR" && (
+						<>
+							<label
+								htmlFor="ref"
+								className="text-sm font-medium block mb-2"
+							>
+								Reference Code (Thai QR)
+							</label>
+							<div className="border rounded-md p-3 bg-gray-50">
+								<img
+									src="/icons/KongKaitod.png"
+									alt="PromptPay QR"
+									className="w-48 h-auto rounded-md mx-auto"
+								/>
+							</div>
+						</>
+					)}
+
+					{selectedMethod === "VISA" && (
+						<>
+							<label
+								htmlFor="card"
+								className="text-sm font-medium block"
+							>
+								Card Number (VISA)
+							</label>
+							<input
+								type="text"
+								id="card"
+								placeholder="xxxx xxxx xxxx xxxx"
+								className="w-full border px-3 py-2 rounded text-sm"
+							/>
+							<div className="flex gap-2">
+								<div className="w-1/2">
+									<label className="text-sm font-medium block">
+										Expiry Date
+									</label>
+									<input
+										type="text"
+										placeholder="MM/YY"
+										className="w-full border px-3 py-2 rounded text-sm"
+									/>
+								</div>
+								<div className="w-1/2">
+									<label className="text-sm font-medium block">
+										CVV
+									</label>
+									<input
+										type="text"
+										placeholder="123"
+										className="w-full border px-3 py-2 rounded text-sm"
+									/>
+								</div>
+							</div>
+						</>
+					)}
+
+					{selectedMethod === "PayPal" && (
+						<>
+							<label
+								htmlFor="paypal-email"
+								className="text-sm font-medium block"
+							>
+								PayPal Email
+							</label>
+							<input
+								type="email"
+								id="paypal-email"
+								placeholder="example@paypal.com"
+								className="w-full border px-3 py-2 rounded text-sm"
+							/>
+						</>
+					)}
+				</div>
 			</div>
 
 			<div className="text-center">

@@ -12,7 +12,7 @@ import { data as rentals } from "@/data/rental";
 import { data as users } from "@/data/user";
 import { data as userReviews } from "@/data/user_review";
 import { useState } from "react";
-import { Rating, RatingStar } from "flowbite-react";
+import { Rating, RatingStar, Datepicker } from "flowbite-react";
 
 const Item = () => {
 	const { itemId } = useParams();
@@ -134,39 +134,41 @@ const Item = () => {
 						Owner: {owner?.first_name} {owner?.last_name}
 					</div>
 
-					<div>
-						<h2 className="font-medium">Lease Term</h2>
-						<div className="flex gap-4 mt-1">
-							{[1, 3, 6].map((term) => (
-								<button
-									key={term}
-									className={`px-3 py-1 border rounded hover:bg-gray-100 ${leaseTerm === term ? "border-black" : "border-gray-400"}`}
-									onClick={() => setLeaseTerm(term)}
-								>
-									{term} Month{term > 1 ? "s" : ""}
-								</button>
-							))}
-						</div>
-					</div>
-
-					<div className="mt-4 space-y-2">
+					<div className="mt-4 space-y-4">
 						<h2 className="font-medium">
 							Choose Your Rental Period
 						</h2>
-						<div className="flex gap-4 items-center">
-							<label className="text-sm">Start :</label>
-							<input
-								className="border px-2 py-1 rounded text-sm"
-								defaultValue=""
-							/>
-						</div>
-						<div className="flex gap-4 items-center">
-							<label className="text-sm">End :</label>
-							<input
-								className="border px-2 py-1 rounded text-sm bg-gray-100"
-								defaultValue=""
-								disabled
-							/>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div className="flex flex-col">
+								<label
+									className="text-sm mb-1"
+									htmlFor="startDate"
+								>
+									Start :
+								</label>
+								<input
+									id="startDate"
+									type="date"
+									min="2023-01-01"
+									max="2025-12-31"
+									className="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
+								/>
+							</div>
+							<div className="flex flex-col">
+								<label
+									className="text-sm mb-1"
+									htmlFor="endDate"
+								>
+									End :
+								</label>
+								<input
+									id="endDate"
+									type="date"
+									min="2023-01-01"
+									max="2025-12-31"
+									className="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
+								/>
+							</div>
 						</div>
 					</div>
 
