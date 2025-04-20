@@ -28,6 +28,8 @@ export const itemApp = new Hono<{
  *
  * id is optional. If id is provided, it will return the item with that id.
  *
+ * Situation: User want to get specific item or all items.
+ *
  * Response:
  * If id is provided:
  * {...item}
@@ -54,6 +56,8 @@ itemApp.get("/:product_id?", async (c) => {
 /**
  * Path: /category/:category_id
  * @param {UUIDTypes} category_id - The id of the category to get items from.
+ *
+ * Situation: User want to get items from specific category.
  */
 itemApp.get("/category/:category_id", async (c) => {
   const id = c.req.param("category_id");
@@ -68,6 +72,8 @@ itemApp.get("/category/:category_id", async (c) => {
 /**
  * Path: /user/:user_id
  * @param {UUIDTypes} user_id - The id of the user to get items from.
+ *
+ * Situation: User want to get items from specific user (Lessor).
  */
 itemApp.get("/user/:user_id", async (c) => {
   const user_id = c.req.param("user_id");
@@ -76,9 +82,12 @@ itemApp.get("/user/:user_id", async (c) => {
 });
 
 itemApp.use(authMiddleware);
+
 /**
  * Path: /
  * @description: Create a new item.
+ *
+ * Situation: Lessor want to create a new item.
  */
 itemApp.post("/", async (c) => {
   const item: Item = await c.req.json();
@@ -95,6 +104,8 @@ itemApp.post("/", async (c) => {
  * Path: /:product_id
  * @param {UUIDTypes} product_id - The id of the item to update.
  * @description: Update an item.
+ *
+ * Situation: Lessor want to update an item.
  */
 itemApp.put("/:product_id", async (c) => {
   const id = c.req.param("product_id");
@@ -114,6 +125,12 @@ itemApp.put("/:product_id", async (c) => {
   return c.json(result);
 });
 
+/**
+ * Path: /:product_id
+ * @description: Delete an item.
+ *
+ * Situation: Lessor want to delete an item.
+ */
 itemApp.delete("/:product_id", async (c) => {
   const id = c.req.param("product_id");
   const user = c.get("user");
