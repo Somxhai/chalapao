@@ -4,6 +4,9 @@ import { auth } from "./lib/auth.ts";
 import { HTTPException } from "hono/http-exception";
 import { itemApp } from "./handler/item.ts";
 import { categoryApp } from "./handler/category.ts";
+import { keywordApp } from "./handler/keyword.ts";
+import { rentalApp } from "./handler/rental.ts";
+import { userInfoApp } from "./handler/user_info.ts";
 
 const app = new Hono();
 
@@ -23,6 +26,9 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 
 app.route("/item", itemApp);
 app.route("/category", categoryApp);
+app.route("/keyword", keywordApp);
+app.route("/rental", rentalApp);
+app.route("/user/info", userInfoApp);
 
 // auth.api.signUpEmail({
 //   body: {
