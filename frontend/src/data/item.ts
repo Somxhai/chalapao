@@ -4,7 +4,7 @@ export const data: ItemType[] = [
 	{
 		id: "550e8400-e29b-41d4-a716-446655440000",
 		owner_id: "2222222222",
-		category_id: "11111111-aaaa-bbbb-cccc-111111111111",
+		category_id: "11111111-aaaa-bbbb-cccc-1111111111111",
 		name: "Olympus MJU II Film Camera",
 		description: "Rare film camera, fully functional with strap.",
 		rental_terms: "Minimum rental period: 3 days.",
@@ -30,7 +30,7 @@ export const data: ItemType[] = [
 	{
 		id: "550e8400-e29b-41d4-a716-446655440001",
 		owner_id: "2222222222",
-		category_id: "11111111-aaaa-bbbb-cccc-111111111111",
+		category_id: "11111111-aaaa-bbbb-cccc-1111111111111",
 		name: "Quechua 4-Person Tent",
 		description: "Waterproof tent, great for outdoor use.",
 		rental_terms: "Minimum rental period: 2 days.",
@@ -56,7 +56,7 @@ export const data: ItemType[] = [
 	{
 		id: "550e8400-e29b-41d4-a716-446655440002",
 		owner_id: "2222222222",
-		category_id: "11111111-aaaa-bbbb-cccc-111111111111",
+		category_id: "11111111-aaaa-bbbb-cccc-1111111111111",
 		name: "Makita Electric Screwdriver",
 		description: "High torque screwdriver with spare battery.",
 		rental_terms: "Minimum rental period: 1 day.",
@@ -82,7 +82,7 @@ export const data: ItemType[] = [
 	{
 		id: "550e8400-e29b-41d4-a716-446655440003",
 		owner_id: "2222222222",
-		category_id: "11111111-aaaa-bbbb-cccc-111111111111",
+		category_id: "11111111-aaaa-bbbb-cccc-1111111111111",
 		name: "Epson Full HD Projector",
 		description: "High-resolution projection with HDMI support.",
 		rental_terms: "Minimum rental period: 1 day.",
