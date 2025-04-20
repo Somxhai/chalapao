@@ -16,7 +16,7 @@ export const getItems = async (
   ).then((res) => res.rows);
 
 export const getItemsByCategory = async (
-  id: string,
+  id: UUIDTypes,
   offset = 0,
   limit = 30,
 ): Promise<Item[]> =>
@@ -39,7 +39,7 @@ export const getItemsByUserId = async (id: string): Promise<Item[]> =>
     `Failed to get items by user ID: ${id}`,
   ).then((res) => res.rows);
 
-export const getItemById = async (id: string): Promise<Item> =>
+export const getItemById = async (id: UUIDTypes): Promise<Item> =>
   await safeQuery(
     (client) =>
       client.query<Item>(

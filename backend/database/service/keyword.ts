@@ -10,7 +10,7 @@ export const createKeywordByItemId = async (
     (client) =>
       client.query(
         `INSERT INTO "keyword" (item_id, keyword)
-         VALUES ($1, $2);`,
+         VALUES ($1, $2) RETURNING *`,
         [itemId, keyword],
       ),
     `Failed to add keyword for item: ${itemId}`,
@@ -18,14 +18,15 @@ export const createKeywordByItemId = async (
 
 export const deleteKeywordByKeyword = async (
   itemId: UUIDTypes,
-  keyword: string,
-): Promise<UUIDTypes> =>
+  keywords: string[],
+): Promise<string[]> =>
   await safeQuery(
     (client) =>
-      client.query(
-        `DELETE FROM "keyword"
-         WHERE item_id = $1 AND keyword = $2;`,
-        [itemId, keyword],
+      client.query<Keyword>(
+        `DELETE FROM keyword
+         WHERE item_id = $1 AND keyword = ANY($2::text[])
+         RETURNING keyword;`,
+        [itemId, keywords],
       ),
-    `Failed to delete keyword for item: ${itemId}`,
-  ).then((res) => res.rows[0]?.id ?? null);
+    `Failed to delete keywords for item: ${itemId}`,
+  ).then((res) => res.rows.map((row) => row.keyword));
