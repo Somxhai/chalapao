@@ -1,9 +1,15 @@
 import { Hono } from "hono";
-import { createRental, updateRentalStatus, deleteRental } from "../database/service/rental.ts";
-import { tryCatchService } from "../lib/utils.ts";
-import { authMiddleware } from "../middleware.ts";
+import { RentalAddress } from "../type/rental.ts";
 import { auth } from "../lib/auth.ts";
-import { UUIDTypes } from "uuid";
+import { authMiddleware, isRenter } from "../middleware.ts";
+import { tryCatchService } from "../lib/utils.ts";
+import {
+  createRental,
+  deleteRental,
+  RentalInput,
+  updateRentalStatus,
+} from "../database/service/rental.ts";
+import { HTTPException } from "hono/http-exception";
 
 export const rentalApp = new Hono<{
   Variables: {
@@ -15,55 +21,61 @@ export const rentalApp = new Hono<{
 rentalApp.use(authMiddleware);
 
 /**
- * Path: /rental/
- * Description: Create a rental
+ * PUT /rental/:rental_id/status
+ * @description Update rental status.
+ * Body: { status: string }
+ *
+ * Description: Update the status of a rental.
+ * NOTE: This should be done by server?
+ */
+rentalApp.put("/:rental_id/status", async (c) => {
+  const rentalId = c.req.param("rental_id");
+  const { status }: { status: string } = await c.req.json();
+
+  const result = await tryCatchService(() =>
+    updateRentalStatus(rentalId, status)
+  );
+
+  return c.json(result);
+});
+
+/**
+ * DELETE /rental/:rental_id
+ * @description Delete a rental.
+ *
+ * NOTE: When renter tries to cancel a rental
+ */
+rentalApp.delete("/:rental_id", async (c) => {
+  const rentalId = c.req.param("rental_id");
+
+  const deletedId = await tryCatchService(() => deleteRental(rentalId));
+  return c.json({ id: deletedId });
+});
+
+rentalApp.use(isRenter);
+/**
+ * POST /rental
+ * @description Create a new rental.
  */
 rentalApp.post("/", async (c) => {
   const {
-    item_id,
+    rental,
+    return_address,
     delivery_address,
-    payment_id,
-    status,
-    start_date,
-    end_date,
+  }: {
+    rental: RentalInput;
+    return_address: RentalAddress;
+    delivery_address: RentalAddress;
   } = await c.req.json();
 
-  const renterId = c.var.user!.id;
+  const user = c.get("user");
+
+  if (!user || user.id !== rental.renter_id) {
+    throw new HTTPException(403, { message: "Unauthorized" });
+  }
 
   const result = await tryCatchService(() =>
-    createRental(
-      renterId,
-      item_id,
-      delivery_address,
-      payment_id,
-      status,
-      start_date,
-      end_date,
-    )
+    createRental(rental, return_address, delivery_address)
   );
-
-  return c.json({ rental_id: result });
-});
-
-/**
- * Path: /rental/:rental_id
- * Description: Update rental status
- */
-rentalApp.put("/:rental_id", async (c) => {
-  const rentalId: UUIDTypes = c.req.param("rental_id");
-  const { status } = await c.req.json();
-
-  const result = await tryCatchService(() => updateRentalStatus(rentalId, status));
-  return c.json({ updated: result > 0 });
-});
-
-/**
- * Path: /rental/:rental_id
- * Description: Delete a rental (only if status is 'canceled')
- */
-rentalApp.delete("/:rental_id", async (c) => {
-  const rentalId: UUIDTypes = c.req.param("rental_id");
-
-  const result = await tryCatchService(() => deleteRental(rentalId));
-  return c.json({ deleted_rental_id: result });
+  return c.json(result);
 });

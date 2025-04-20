@@ -1,9 +1,11 @@
 import { Hono } from "hono";
-import { createKeywordByItemId, deleteKeywordByKeyword } from "../database/service/keyword.ts";
-import { authMiddleware } from "../middleware.ts";
-import { tryCatchService } from "../lib/utils.ts";
 import { auth } from "../lib/auth.ts";
-import { UUIDTypes } from "uuid";
+import { tryCatchService } from "../lib/utils.ts";
+import { authMiddleware, isLessor } from "../middleware.ts";
+import {
+  createKeywordByItemId,
+  deleteKeywordByKeyword,
+} from "../database/service/keyword.ts";
 
 export const keywordApp = new Hono<{
   Variables: {
@@ -13,26 +15,38 @@ export const keywordApp = new Hono<{
 }>();
 
 keywordApp.use(authMiddleware);
+keywordApp.use(isLessor);
 
 /**
- * Path: /keyword/
- * Description: Add a keyword to an item
+ * Path: /keyword/:item_id
+ * @method POST
+ * @description Create a new keyword for the given item.
+ * Body: { keyword: string }
  */
-keywordApp.post("/", async (c) => {
-  const { item_id, keyword }: { item_id: UUIDTypes; keyword: string } = await c.req.json();
+keywordApp.post("/:item_id", async (c) => {
+  const itemId = c.req.param("item_id");
+  const { keyword }: { keyword: string } = await c.req.json();
 
-  const result = await tryCatchService(() => createKeywordByItemId(item_id, keyword));
-  return c.json({ added_keyword: result });
+  const result = await tryCatchService(() =>
+    createKeywordByItemId(itemId, keyword)
+  );
+
+  return c.json(result);
 });
 
 /**
- * Path: /keyword/:item_id/:keyword
- * Description: Delete a keyword by item ID and keyword string
+ * Path: /keyword/:item_id
+ * @method DELETE
+ * @description Delete keywords for the given item.
+ * Body: { keywords: string[] }
  */
-keywordApp.delete("/:item_id/:keyword", async (c) => {
+keywordApp.delete("/:item_id", async (c) => {
   const itemId = c.req.param("item_id");
-  const keyword = decodeURIComponent(c.req.param("keyword"));
+  const { keywords }: { keywords: string[] } = await c.req.json();
 
-  const result = await tryCatchService(() => deleteKeywordByKeyword(itemId, keyword));
-  return c.json({ deleted_keyword: result });
+  const deletedKeyword = await tryCatchService(() =>
+    deleteKeywordByKeyword(itemId, keywords)
+  );
+
+  return c.json({ keywords: deletedKeyword });
 });

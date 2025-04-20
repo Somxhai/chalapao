@@ -1,12 +1,14 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import {
-  getUserInfoByUserId,
   createUserInfo,
+  getUserInfoByUserId,
   updateUserInfoByUserId,
 } from "../database/service/user_info.ts";
-import { authMiddleware } from "../middleware.ts";
-import { tryCatchService } from "../lib/utils.ts";
 import { auth } from "../lib/auth.ts";
+import { tryCatchService } from "../lib/utils.ts";
+import { authMiddleware } from "../middleware.ts";
+import { UserInfoRequest } from "../type/user_info.ts";
 
 export const userInfoApp = new Hono<{
   Variables: {
@@ -15,62 +17,69 @@ export const userInfoApp = new Hono<{
   };
 }>();
 
-// Auth middleware (ต้องล็อกอินเพื่อเข้าถึง user_info)
+// Middleware for auth
 userInfoApp.use(authMiddleware);
 
 /**
- * GET /user-info
- * ดึง user info ของผู้ใช้ที่ล็อกอินอยู่
+ * Path: /
+ * @description: Get user info by logged-in user id
+ *
+ * Situation: Logged-in user wants to view their user information.
  */
-userInfoApp.get("/", async (c) => {
+userInfoApp.get("/:user_id", async (c) => {
+  const user_id = c.req.param("user_id");
   const user = c.get("user");
-  if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-  const userInfo = await tryCatchService(() =>
-    getUserInfoByUserId(user.id)
-  );
-  return c.json(userInfo);
+  if (!user || user.id !== user_id) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+
+  const info = await tryCatchService(() => getUserInfoByUserId(user_id));
+  return c.json(info);
 });
 
 /**
- * POST /user-info
- * สร้าง user info ให้ผู้ใช้ (ใช้ตอนสมัคร หรือกรอกโปรไฟล์ครั้งแรก)
+ * Path: /
+ * @description: Create user info
+ *
+ * Situation: New user registers and fills out their user information.
  */
-userInfoApp.post("/", async (c) => {
-  const {
-    fullName,
-    gender,
-    birthDate,
-    citizenId,
-    phoneNumber,
-  } = await c.req.json();
+userInfoApp.post("/:user_id", async (c) => {
+  const user_id = c.req.param("user_id");
+  const user = c.get("user");
+  const userInfo: UserInfoRequest = await c.req.json();
 
-  const id = await tryCatchService(() =>
-    createUserInfo(fullName, gender, birthDate, citizenId, phoneNumber)
-  );
+  if (!user || user.id !== user_id) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
 
-  return c.json({ id }, 201);
+  userInfo.user_id = user_id;
+
+  const result = await tryCatchService(() => createUserInfo(userInfo));
+  return c.json({ id: result });
 });
 
 /**
- * PUT /user-info
- * แก้ไข user info ของผู้ใช้ที่ล็อกอินอยู่
+ * Path: /
+ * @description: Update user info by logged-in user id
+ *
+ * Situation: Logged-in user wants to update their profile info.
  */
-userInfoApp.put("/", async (c) => {
+userInfoApp.put("/:user_id", async (c) => {
   const user = c.get("user");
-  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const user_id = c.req.param("user_id");
+  if (!user || user.id !== user_id) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
 
-  const {
-    fullName,
-    gender,
-    birthDate,
-    citizenId,
-    phoneNumber,
-  } = await c.req.json();
+  const userInfo: UserInfoRequest = await c.req.json();
 
-  const updated = await tryCatchService(() =>
-    updateUserInfoByUserId(user.id, fullName, gender, birthDate, citizenId, phoneNumber)
+  const result = await tryCatchService(() =>
+    updateUserInfoByUserId(
+      userInfo,
+      user_id,
+    )
   );
 
-  return c.json({ updated });
+  return c.json(result);
 });
