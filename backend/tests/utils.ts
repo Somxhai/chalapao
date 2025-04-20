@@ -1,28 +1,33 @@
 import { pool } from "../database/db.ts";
 import { auth } from "../lib/auth.ts";
+import { APIError } from "better-auth/api";
 
-export const createUser = async () => {
-  const email = "test-chalapao-backend@testmail.test";
+type UserType = "renter" | "lessor" | "admin";
+
+export const createUser = async (user_type: UserType = "renter"): Promise<{
+  token: string | null;
+  user: typeof auth.$Infer.Session.user | null;
+  cookie: string | null;
+}> => {
+  const dev = Deno.env.get("DEV") === "true";
+
+  if (!dev) {
+    return { token: null, user: null, cookie: null };
+  }
+
+  const email = `${user_type}-chalapao-backend@testmail.test`;
   const password = "testpassword";
-  // console.log("Creating user with email", email);
-  // Try signing in first
-  let signin = await auth.api.signInEmail({
+
+  await tryToSignUpUser(email, password);
+
+  if (user_type !== "renter") {
+    await setRole(email, user_type);
+  }
+
+  const signin = await auth.api.signInEmail({
     body: { email, password },
     asResponse: true,
   });
-  if (!signin.ok) {
-    await auth.api.signUpEmail({
-      body: {
-        name: "test-chalapao-" + crypto.randomUUID(),
-        email,
-        password,
-      },
-    });
-    signin = await auth.api.signInEmail({
-      body: { email, password },
-      asResponse: true,
-    });
-  }
 
   const { token, user }: {
     token: string | null;
@@ -33,48 +38,39 @@ export const createUser = async () => {
   return { token, user, cookie };
 };
 
-export const createAdmin = async () => {
-  const email = "admin-chalapao-backend@testmail.test";
-  const password = "adminpassword";
-  // console.log("Creating admin with email", email);
-  // Try signing in first
-  let signin = await auth.api.signInEmail({
-    body: { email, password },
-    asResponse: true,
-  });
+const setRole = async (email: string, user_type: UserType) => {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      'UPDATE "user" SET user_type = $1 WHERE email = $2',
+      [user_type, email],
+    );
+    if (res.rowCount === 0) {
+      throw new Error(
+        `Failed to update user_type to ${user_type} for ${email}`,
+      );
+    }
+  } finally {
+    client.release();
+  }
+};
 
-  if (!signin.ok) {
+const tryToSignUpUser = async (email: string, password: string) => {
+  try {
     await auth.api.signUpEmail({
       body: {
-        name: "admin-chalapao-" + crypto.randomUUID(),
+        name: "test-chalapao-" + crypto.randomUUID(),
         email,
         password,
       },
     });
-    // Set user type to admin
-    const client = await pool.connect();
-    await client.query(
-      "UPDATE \"user\" SET user_type = 'admin' WHERE email = $1",
-      [
-        email,
-      ],
-    );
-
-    signin = await auth.api.signInEmail({
-      body: { email, password },
-      asResponse: true,
-    });
+  } catch (error) {
+    if (error instanceof APIError) {
+      const msg = error.message;
+      if (!msg.includes("User already exists")) {
+        console.log("Sign up failed: " + error.message, error.status);
+        throw error;
+      }
+    }
   }
-
-  const { token, user }: {
-    token: string | null;
-    user: typeof auth.$Infer.Session.user | null;
-  } = await signin.json();
-  const cookie = signin.headers.get("set-cookie");
-
-  if (!cookie) {
-    throw new Error("Cookie is null");
-  }
-
-  return { token, user, cookie };
 };
