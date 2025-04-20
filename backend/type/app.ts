@@ -11,37 +11,8 @@ export interface Item {
   item_status: "available" | "rented" | "unavailable";
   price_per_day: number;
   category_id?: UUIDTypes;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// Rental Interface
-export interface Rental {
-  id: UUIDTypes;
-  renter_id: string;
-  item_id: UUIDTypes;
-  delivery_address: UUIDTypes;
-  return_address: UUIDTypes;
-  payment_id: UUIDTypes;
-  status: "pending" | "accepted" | "cancel";
-  start_date: string;
-  end_date: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Rental Address Interface
-export interface RentalAddress {
-  id: UUIDTypes;
-  rental_id: UUIDTypes;
-  type: "delivery" | "return";
-  residence_info: string;
-  sub_district: string;
-  district: string;
-  province: string;
-  postal_code: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 // Category Interface
