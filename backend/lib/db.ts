@@ -61,8 +61,9 @@ export async function setupDatabase(client: PoolClient) {
       "item",
       "rental",
       "payment",
-      "review",
-      "review_image",
+      "review_item",
+      "review_user",
+      "review_item_image",
     ];
 
     for (const table of tables) {
