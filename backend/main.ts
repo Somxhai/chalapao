@@ -7,6 +7,7 @@ import { categoryApp } from "./handler/category.ts";
 import { keywordApp } from "./handler/keyword.ts";
 import { rentalApp } from "./handler/rental.ts";
 import { userInfoApp } from "./handler/user_info.ts";
+import { reviewApp } from "./handler/review.ts";
 
 const app = new Hono();
 
@@ -29,13 +30,6 @@ app.route("/category", categoryApp);
 app.route("/keyword", keywordApp);
 app.route("/rental", rentalApp);
 app.route("/user/info", userInfoApp);
-
-// auth.api.signUpEmail({
-//   body: {
-//     name: "test-chalapao-" + crypto.randomUUID(),
-//     email: "test-chalapao-" + crypto.randomUUID() + "@testmail.test",
-//     password: "testpassword",
-//   },
-// });
+app.route("review", reviewApp);
 
 Deno.serve({ port: 8787 }, app.fetch);
