@@ -19,7 +19,13 @@ import { data as rentals } from "@/data/rental";
 import { data as users } from "@/data/user";
 import { data as userReviews } from "@/data/user_review";
 
-const Header = () => {
+import { ReactNode } from "react";
+
+interface HeaderProps {
+	children: ReactNode;
+}
+
+const Header = ({ children }: HeaderProps) => {
 	return (
 		<Navbar>
 			<div className="px-2 py-2.5 sm:px-4 rounded-lg border w-full flex justify-between">
@@ -32,7 +38,7 @@ const Header = () => {
 				</div>
 			</div>
 			<div className="flex items-center justify-between w-full">
-				<Links />
+				{children}
 			</div>
 		</Navbar>
 	);

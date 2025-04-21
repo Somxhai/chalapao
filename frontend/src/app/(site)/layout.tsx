@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeModeScript } from "flowbite-react";
 
-import Header from "@/components/Header";
-
 import "@/app/css/globals.css";
 import "@/app/css/styles.css";
 
@@ -24,7 +22,6 @@ const RootLayout = ({
 			<body
 				className={`antialiased vsc-initialized bg-[#f0f0f0] text-gray-900 dark:bg-gray-900 dark:text-white`}
 			>
-				<Header />
 				{children}
 			</body>
 		</html>

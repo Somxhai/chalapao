@@ -35,7 +35,7 @@ export default function ItemList({ item }: { item: ItemType }) {
 			<h5 className="text-xl font-semibold tracking-tight dark:text-white line-clamp-2">
 				{item.name}
 			</h5>
-			<h3 className="text-2xl xl:text-3xl mt-auto font-bold dark:text-white">
+			<h3 className="text-2xl mt-auto font-bold dark:text-white">
 				฿{item.price_per_day.toFixed(2)}/day
 			</h3>
 		</a>
