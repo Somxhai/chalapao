@@ -2,19 +2,22 @@ import { safeQuery } from "../../lib/utils.ts";
 import { UUIDTypes } from "uuid";
 import { Keyword } from "../../type/app.ts";
 
-export const createKeywordByItemId = async (
+export const createKeywordsByItemId = async (
   itemId: UUIDTypes,
-  keyword: string,
-): Promise<Keyword> =>
+  keywords: string[],
+): Promise<Keyword[]> =>
   await safeQuery(
-    (client) =>
-      client.query(
+    async (client) => {
+      const result = await client.query<Keyword>(
         `INSERT INTO "keyword" (item_id, keyword)
-         VALUES ($1, $2) RETURNING *`,
-        [itemId, keyword],
-      ),
-    `Failed to add keyword for item: ${itemId}`,
-  ).then((res) => res.rows[0]);
+         SELECT $1, unnest($2::text[])
+         RETURNING *;`,
+        [itemId, keywords],
+      );
+      return result.rows;
+    },
+    `Failed to add keywords for item: ${itemId}`,
+  );
 
 export const deleteKeywordByKeyword = async (
   itemId: UUIDTypes,

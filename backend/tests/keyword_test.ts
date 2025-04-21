@@ -48,10 +48,10 @@ Deno.test("Keyword routes", async (t) => {
   });
 
   const keywordBody = {
-    keyword: "example-keyword",
+    keywords: ["example-keyword", "another-keyword"],
   };
 
-  let createdKeyword: Keyword;
+  let createdKeyword: Keyword[];
 
   await t.step("POST /:item_id - create keyword", async () => {
     const res = await keywordApp.request(`/${itemId}`, {
@@ -64,8 +64,8 @@ Deno.test("Keyword routes", async (t) => {
     });
 
     assertEquals(res.status, 200);
-    const data = await res.json();
-    assertExists(data);
+    const data: Keyword[] = await res.json();
+    assertEquals(data.map((v) => v.keyword), keywordBody.keywords);
     createdKeyword = data;
   });
 
@@ -73,7 +73,7 @@ Deno.test("Keyword routes", async (t) => {
     const res = await keywordApp.request(`/${itemId}`, {
       method: "DELETE",
       body: JSON.stringify({
-        keywords: [createdKeyword.keyword],
+        keywords: createdKeyword.map((v) => v.keyword),
       }),
       headers: {
         cookie: lessorCookie,
@@ -83,7 +83,7 @@ Deno.test("Keyword routes", async (t) => {
 
     assertEquals(res.status, 200);
     const json: { keywords: string[] } = await res.json();
-    assertEquals(json.keywords, [createdKeyword.keyword]);
+    assertEquals(json.keywords, createdKeyword.map((v) => v.keyword));
   });
 
   await t.step("POST /:item_id - fail if not lessor", async () => {

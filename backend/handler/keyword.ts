@@ -3,7 +3,7 @@ import { auth } from "../lib/auth.ts";
 import { tryCatchService } from "../lib/utils.ts";
 import { authMiddleware, isLessor } from "../middleware.ts";
 import {
-  createKeywordByItemId,
+  createKeywordsByItemId,
   deleteKeywordByKeyword,
 } from "../database/service/keyword.ts";
 
@@ -25,10 +25,10 @@ keywordApp.use(isLessor);
  */
 keywordApp.post("/:item_id", async (c) => {
   const itemId = c.req.param("item_id");
-  const { keyword }: { keyword: string } = await c.req.json();
+  const { keywords }: { keywords: string[] } = await c.req.json();
 
   const result = await tryCatchService(() =>
-    createKeywordByItemId(itemId, keyword)
+    createKeywordsByItemId(itemId, keywords)
   );
 
   return c.json(result);
