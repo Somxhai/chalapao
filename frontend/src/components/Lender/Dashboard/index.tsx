@@ -1,23 +1,192 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
+
 import { data as addresses } from "@/data/address";
 import { data as categories } from "@/data/category";
 import { data as items } from "@/data/item";
 import { data as itemImages } from "@/data/item_image";
-import { data as itemReviews } from "@/data/item_review";
-import { data as itemReviewImages } from "@/data/item_review_image";
-import { data as keywords } from "@/data/keyword";
-import { data as payments } from "@/data/payment";
-import { data as rentals } from "@/data/rental";
-import { data as users } from "@/data/user";
 import { data as userReviews } from "@/data/user_review";
+import { data as users } from "@/data/user";
+
+const userId = "2222222222";
+// ดึงข้อมูลผู้ใช้ (ร้านค้า)
+const shop = users.find((u) => u.id === userId);
+// ดึงที่อยู่หลักของร้าน
+const address = shop?.address.find((a) => a.is_primary);
 
 const Dashboard = () => {
-	return (
-		<main className="container mx-auto px-16 py-8">
-			Write HTML + Tailwind Here
-		</main>
-	);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [showAllItems, setShowAllItems] = useState(false);
+
+  // กรองสินค้าตามเจ้าของและหมวดหมู่ที่เลือก
+  const filteredItems = items.filter((item) => {
+    const isOwner = item.owner_id === userId;
+    const inCategory = selectedCategoryId ? item.category_id === selectedCategoryId : true;
+    return isOwner && inCategory;
+  });
+
+  const itemsToShow = showAllItems ? filteredItems : filteredItems.slice(0, 3);
+
+  // จับคู่รีวิวร้านนี้เข้ากับข้อมูลผู้รีวิว
+  const shopReviewsWithReviewer = userReviews
+    .filter((r) => r.user_id === userId)
+    .map((r) => {
+      const reviewer = users.find((u) => u.id === r.reviewer_id);
+      return {
+        ...r,
+        reviewer_name: `${reviewer?.first_name || "ไม่ทราบ"} ${reviewer?.last_name || ""}`,
+      };
+    });
+
+  // ฟังก์ชั่นดึงรูปแรกของสินค้า ถ้าไม่มีใช้ default
+  const getFirstImage = (itemId: string) =>
+    itemImages.find((img) => img.item_id === itemId)?.image_url || "/default-image.png";
+
+  return (
+    <div className="pb-16">
+      {/* หัวข้อ Storefront Management + Dashboard Box (ตัวเลือกเสริม) */}
+      <div className="max-w-[1200px] mx-auto px-6 mb-8 mt-5">
+        <h1 className="text-3xl font-bold text-black mb-4">Storefront Management</h1>
+        <div className="w-full bg-gray-200 h-32 rounded-md flex justify-center items-center">
+          <span className="text-xl text-gray-700 font-semibold">Dashboard</span>
+        </div>
+      </div>
+
+      {/* ส่วนหัวร้าน (ให้เหมือนรูปตัวอย่าง) */}
+      <div className="w-full max-w-[1200px] mx-auto px-6 mb-8">
+        <div className="flex justify-between items-start">
+          {/* ด้านซ้าย: โลโก้ + ชื่อร้าน + เรตติ้ง + คำบรรยาย */}
+          <div className="flex gap-4 items-center">
+            {/* โลโก้ร้าน */}
+            <div className="flex-shrink-0">
+              <img
+                src={shop?.image_url || "/default-logo.png"}
+                alt={shop?.user_name}
+                className="w-20 h-20 rounded-full object-cover"
+              />
+            </div>
+            {/* ข้อมูลร้าน */}
+            <div>
+              <h2 className="text-2xl font-bold">
+                {shop?.first_name} {shop?.last_name}
+              </h2>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-yellow-500">⭐</span>
+                <span className="text-xl font-medium">
+                  {shop?.user_rating?.toFixed(2) || "–"}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                ให้บริการเช่าอุปกรณ์ครบวงจร พร้อมคำแนะนำจากมืออาชีพ
+              </p>
+            </div>
+          </div>
+
+          {/* ด้านขวา: ปุ่มแก้ไขหน้าร้าน + ข้อมูลติดต่อ */}
+          <div className="text-right">
+            <Link
+              href={`shop/edit`} // ปรับให้ตรงกับโครงสร้างโปรเจ็กต์ของคุณ
+              className="text-md font-medium text-black underline hover:text-gray-700"
+            >
+              แก้ไขหน้าร้าน
+            </Link>
+            <div className="text-sm text-gray-500 mt-2 leading-relaxed">
+              <div>
+                ชื่อ: {shop?.first_name} {shop?.last_name}
+              </div>
+              <div>โทร: {shop?.phone}</div>
+              <div>
+                ที่อยู่:{" "}
+                {address
+                  ? `${address.residence_info}, ${address.subdistrict}, ${address.district}, ${address.province} ${address.postal_code}`
+                  : "ไม่พบที่อยู่"}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* เมนูหมวดหมู่ */}
+      <div className="max-w-[1200px] mx-auto px-6 mb-8">
+        <div className="flex gap-6 justify-center pb-4">
+          <button
+            className={`text-md font-medium ${
+              selectedCategoryId === null ? "text-black border-b-2 border-black" : "text-gray-500"
+            }`}
+            onClick={() => {
+              setSelectedCategoryId(null);
+              setShowAllItems(false);
+            }}
+          >
+            ทั้งหมด
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              className={`text-md font-medium transition duration-300 ease-in-out ${
+                selectedCategoryId === cat.id
+                  ? "text-black border-b-2 border-black"
+                  : "text-gray-500 hover:text-black"
+              }`}
+              onClick={() => {
+                setSelectedCategoryId(cat.id);
+                setShowAllItems(false);
+              }}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* รายการสินค้า */}
+      <div className="max-w-[1200px] mx-auto px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
+          {itemsToShow.length === 0 ? (
+            <p className="text-center text-gray-500 col-span-full">ไม่พบสินค้าในหมวดนี้</p>
+          ) : (
+            itemsToShow.map((item) => (
+              <Link key={item.id} href={`/site/item/${item.id}`}>
+                <div className="border rounded-lg p-4 shadow-sm cursor-pointer">
+                  {/* รูปสินค้า (รักษาสัดส่วน) */}
+                  <div className="relative w-full aspect-square mb-2">
+                    <img
+                      src={getFirstImage(item.id)}
+                      alt={item.name}
+                      className="absolute inset-0 w-full h-full object-contain rounded"
+                    />
+                  </div>
+                  <div className="text-md font-semibold">{item.name}</div>
+                  <div className="text-sm text-gray-500">{item.price_per_day} บาท / วัน</div>
+                  <div
+                    className={`text-xs mt-1 ${
+                      item.item_status === "Available" ? "text-green-600" : "text-red-500"
+                    }`}
+                  >
+                    {item.item_status === "Available" ? "Available" : "Rented"}
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+
+        {/* ปุ่มแสดงสินค้าทั้งหมด */}
+        {!showAllItems && filteredItems.length > 3 && (
+          <div className="flex justify-center mb-12">
+            <button
+              className="bg-gray-100 text-gray-700 px-6 py-2 rounded-md"
+              onClick={() => setShowAllItems(true)}
+            >
+              แสดงเพิ่มเติม
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;
