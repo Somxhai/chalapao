@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { parse as uuidparse } from "uuid";
+import { UUIDTypes } from "uuid";
 import {
   createItem,
   deleteItemById,
@@ -14,6 +14,7 @@ import { Item } from "../type/app.ts";
 import { HTTPException } from "hono/http-exception";
 import { tryCatchService } from "../lib/utils.ts";
 import { authMiddleware } from "../middleware.ts";
+import { deleteImages, saveImages } from "../lib/image.ts";
 
 export const itemApp = new Hono<{
   Variables: {
@@ -48,9 +49,18 @@ itemApp.get("/:product_id?", async (c) => {
   const offset = parseInt(c.req.query("offset") || "0");
   const limit = parseInt(c.req.query("limit") || "30");
 
-  const items = await tryCatchService(
+  let items = await tryCatchService(
     () => getItems(offset, limit),
   );
+
+  items = items.map((item) => {
+    const images = item.images?.map((image) => `image/item/${image}`);
+    return {
+      ...item,
+      images,
+    };
+  });
+
   return c.json(items);
 });
 /**
@@ -90,7 +100,10 @@ itemApp.use(authMiddleware);
  * Situation: Lessor want to create a new item.
  */
 itemApp.post("/", async (c) => {
-  const item: Item = await c.req.json();
+  const body = await c.req.formData();
+  const item: Item = JSON.parse(body.get("item") as string);
+  const files = body.getAll("files") as File[];
+
   const user = c.get("user");
   if (!user) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -98,7 +111,16 @@ itemApp.post("/", async (c) => {
   const result = await tryCatchService(() => {
     return createItem(item, user.id);
   });
-  return c.json(result);
+  let paths: string[] = [];
+
+  if (files) {
+    paths = await saveImages(files, result.id as UUIDTypes, "item_image");
+  }
+
+  return c.json({
+    ...result,
+    paths,
+  });
 });
 /**
  * Path: /:product_id
@@ -138,10 +160,7 @@ itemApp.delete("/:product_id", async (c) => {
     throw new HTTPException(403, { message: "Unauthorized" });
   }
 
-  const user_id = uuidparse(user.id);
-
-  const result = await tryCatchService(() => deleteItemById(id, user_id));
+  await deleteImages(id, "item_image");
+  const result = await tryCatchService(() => deleteItemById(id, user.id));
   return c.json(result);
 });
-
-// TODO: Add image to item
