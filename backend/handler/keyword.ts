@@ -5,6 +5,7 @@ import { authMiddleware, isLessor } from "../middleware.ts";
 import {
   createKeywordsByItemId,
   deleteKeywordByKeyword,
+  getKeywordsById,
 } from "../database/service/keyword.ts";
 
 export const keywordApp = new Hono<{
@@ -13,6 +14,12 @@ export const keywordApp = new Hono<{
     session: typeof auth.$Infer.Session.session | null;
   };
 }>();
+
+keywordApp.get("/:keyword_id", async (c) => {
+  const keywordId = c.req.param("keyword_id");
+  const keyword = await getKeywordsById(keywordId);
+  return c.json(keyword);
+});
 
 keywordApp.use(authMiddleware);
 keywordApp.use(isLessor);

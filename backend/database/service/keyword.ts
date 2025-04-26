@@ -33,3 +33,14 @@ export const deleteKeywordByKeyword = async (
       ),
     `Failed to delete keywords for item: ${itemId}`,
   ).then((res) => res.rows.map((row) => row.keyword));
+
+export const getKeywordsById = async (
+  keywordId: UUIDTypes,
+) =>
+  await safeQuery(
+    (client) =>
+      client.query<Keyword>(`SELECT * FROM keyword WHERE id = $1;`, [
+        keywordId,
+      ]),
+    `Failed to get keyword by id: ${keywordId}`,
+  );

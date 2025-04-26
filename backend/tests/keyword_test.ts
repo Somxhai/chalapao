@@ -1,8 +1,8 @@
-import { assertEquals, assertExists } from "jsr:@std/assert";
+import { assertEquals } from "jsr:@std/assert";
 import { keywordApp } from "../handler/keyword.ts";
 import { itemApp } from "../handler/item.ts";
 import { createTestItem, createUser } from "./utils.ts";
-import { Item, Keyword } from "../type/app.ts";
+import { Keyword } from "../type/app.ts";
 import { UUIDTypes } from "uuid";
 
 Deno.test("Keyword routes", async (t) => {
@@ -77,6 +77,15 @@ Deno.test("Keyword routes", async (t) => {
     });
 
     assertEquals(res.status, 403);
+  });
+
+  await t.step("GET /:keyword_id", async () => {
+    const res = await keywordApp.request(`/${createdKeyword[0].id}`, {
+      headers: {
+        cookie: renterCookie,
+      },
+    });
+    assertEquals(res.status, 200);
   });
 
   await t.step("Delete item", async () => {
