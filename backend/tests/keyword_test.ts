@@ -1,7 +1,7 @@
 import { assertEquals, assertExists } from "jsr:@std/assert";
 import { keywordApp } from "../handler/keyword.ts";
 import { itemApp } from "../handler/item.ts";
-import { createUser } from "./utils.ts";
+import { createTestItem, createUser } from "./utils.ts";
 import { Item, Keyword } from "../type/app.ts";
 import { UUIDTypes } from "uuid";
 
@@ -19,32 +19,12 @@ Deno.test("Keyword routes", async (t) => {
     throw new Error("Renter creation failed");
   }
 
-  const newItem: Item = {
-    owner_id: lessorUser.id, // use the actual logged-in user's id
-    price_per_day: 100,
-    description: "A test item",
-    item_name: "Test item",
-    penalty_terms: "A test penalty term",
-    rental_terms: "A test rental term",
-    item_status: "available",
-  };
-
   // You can insert a mock item into your DB or use a known one for testing
   let itemId: UUIDTypes; // Replace with a real or mocked ID
 
   await t.step("Create Item for testing", async () => {
-    const res = await itemApp.request("/", {
-      method: "POST",
-      headers: {
-        cookie: lessorCookie,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newItem),
-    });
-    assertEquals(res.status, 200);
-    const createdItem: Item = await res.json();
-    if (!createdItem) throw new Error("Item creation failed");
-    if (createdItem.id) itemId = createdItem.id;
+    const item = await createTestItem(lessorUser.id, lessorCookie);
+    itemId = item.id as UUIDTypes;
   });
 
   const keywordBody = {
