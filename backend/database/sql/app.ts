@@ -117,16 +117,6 @@ CREATE TABLE IF NOT EXISTS
   );
 `;
 
-export const CREATE_REVIEW_IMAGE_TABLE = `
-CREATE TABLE IF NOT EXISTS
-  "review_item_image" (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    review_id UUID NOT NULL,
-    image_url TEXT NOT NULL,
-    CONSTRAINT image_for FOREIGN KEY (review_id) REFERENCES "review_item"(id) ON DELETE CASCADE
-  );
-`;
-
 export const CREATE_KEYWORD_TABLE = `
 CREATE TABLE IF NOT EXISTS "keyword"(
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -140,7 +130,26 @@ CREATE TABLE IF NOT EXISTS
   "item_image"(
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     item_id UUID NOT NULL,
-    image_url TEXT NOT NULL,
+    path TEXT NOT NULL,
     CONSTRAINT image_for FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE
   )
+`;
+
+export const CREATE_REVIEW_IMAGE_TABLE = `
+CREATE TABLE IF NOT EXISTS
+  "review_item_image" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    review_id UUID NOT NULL,
+    path TEXT NOT NULL,
+    CONSTRAINT image_for FOREIGN KEY (review_id) REFERENCES "review_item"(id) ON DELETE CASCADE
+  );
+`;
+
+export const CREATE_REVIEW_USER_IMAGE_TABLE = `
+    CREATE TABLE IF NOT EXISTS "review_user_image" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    review_id UUID NOT NULL,
+    path TEXT NOT NULL,
+    CONSTRAINT image_for FOREIGN KEY (review_id) REFERENCES "review_user"(id) ON DELETE CASCADE
+)
 `;
