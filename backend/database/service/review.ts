@@ -86,30 +86,26 @@ export const getReviewsByItemId = async (
 ): Promise<(ReviewItem & { images: string[] })[]> =>
   await safeQuery(
     (client) =>
-      client.query<ReviewItem & { image_url: string | null }>(
-        `SELECT review.*
+      client.query<ReviewItem & { path: string }>(
+        `SELECT review.*, image.path
          FROM "review_item" review
-        LEFT JOIN "review_item_image" image
-        ON review.id = image.review_id
-         WHERE item_id = $1;`,
+         LEFT JOIN "review_item_image" image
+         ON review.id = image.review_id
+         WHERE review.item_id = $1;`,
         [item_id],
       ),
     `Failed to fetch reviews for item ${item_id}`,
   ).then((res) => {
     const map = new Map<UUIDTypes, ReviewItem & { images: string[] }>();
-    const rows = res.rows;
-    for (const row of rows) {
+    for (const row of res.rows) {
+      const { path, ...review } = row; // ⬅️ destructure and remove 'path'
       if (!map.has(row.id)) {
-        const image = row.image_url ? [row.image_url] : [];
         map.set(row.id, {
-          ...row,
-          images: image,
+          ...review,
+          images: path ? [path] : [],
         });
-        continue;
-      }
-      const current = map.get(row.id);
-      if (current && row.image_url) {
-        current.images.push(row.image_url);
+      } else if (path) {
+        map.get(row.id)!.images.push(path);
       }
     }
     return Array.from(map.values());
@@ -118,13 +114,30 @@ export const getReviewsByItemId = async (
 // Get all reviews for a given user
 export const getUserReviewByUserId = async (
   user_id: UUIDTypes,
-): Promise<ReviewUser[]> =>
+): Promise<(ReviewUser & { images: string[] })[]> =>
   await safeQuery(
     (client) =>
-      client.query<ReviewUser>(
-        `SELECT * FROM "review_user"
-         WHERE user_id = $1;`,
+      client.query<ReviewUser & { path: string }>(
+        `SELECT review.*, image.path
+         FROM "review_user" review
+         LEFT JOIN "review_user_image" image
+         ON review.id = image.review_id
+         WHERE review.user_id = $1;`,
         [user_id],
       ),
     `Failed to fetch reviews for user ${user_id}`,
-  ).then((res) => res.rows);
+  ).then((res) => {
+    const map = new Map<UUIDTypes, ReviewUser & { images: string[] }>();
+    for (const row of res.rows) {
+      if (!map.has(row.id)) {
+        map.set(row.id, {
+          ...row,
+          images: row.path ? [row.path] : [],
+        });
+      } else if (row.path) {
+        map.get(row.id)!.images.push(row.path);
+      }
+    }
+
+    return Array.from(map.values());
+  });

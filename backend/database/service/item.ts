@@ -9,7 +9,11 @@ export const getItems = async (
   await safeQuery(
     (client) =>
       client.query<Item>(
-        `SELECT * FROM "item" LIMIT $1 OFFSET $2;`,
+        `SELECT i.*, COALESCE(array_agg(ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images
+        FROM "item" i
+        LEFT JOIN item_image ii ON i.id = ii.item_id
+        GROUP BY i.id
+        LIMIT $1 OFFSET $2;`,
         [limit, offset],
       ),
     `Failed to get items: offset = ${offset}, limit = ${limit}`,
