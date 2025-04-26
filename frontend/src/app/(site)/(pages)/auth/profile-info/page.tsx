@@ -45,7 +45,7 @@ const ProfileInfo = () => {
 	};
 
 	return (
-		<>
+		<main className="container mx-auto px-16 py-8">
 			<div className="flex items-center justify-center min-h-screen">
 				<div className="relative w-full max-w-2xl p-10 rounded-lg shadow bg-white">
 					<div className="mb-8 text-center">
@@ -251,7 +251,7 @@ const ProfileInfo = () => {
 					</form>
 				</div>
 			</div>
-		</>
+		</main>
 	);
 };
 

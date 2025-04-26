@@ -5,32 +5,79 @@ import { useParams, notFound } from "next/navigation";
 
 import { Carousel } from "flowbite-react";
 
-import { data as addresses } from "@/data/address";
-import { data as categories } from "@/data/category";
-import { data as items } from "@/data/item";
-import { data as itemImages } from "@/data/item_image";
-import { data as itemReviews } from "@/data/item_review";
-import { data as keywords } from "@/data/keyword";
-import { data as payments } from "@/data/payment";
-import { data as rentals } from "@/data/rental";
-import { data as users } from "@/data/user";
-import { data as userReviews } from "@/data/user_review";
+import { ItemType } from "@/types/item";
 
 const Page = () => {
 	const { itemId } = useParams();
-	const item = items.find((i) => i.id === itemId);
-	const reviews = itemReviews.filter((r) => r.item_id === item?.id);
-	const owner = users.find((u) => u.id === item?.owner_id);
-	const images = itemImages.filter((img) => img.item_id === item?.id);
+
+	const [item, setItem] = useState<ItemType>();
+	const [startDate, setStartDate] = useState<string>(
+		new Date("4/26/2025").toISOString().split("T")[0]
+	);
+	const [endDate, setEndDate] = useState<string>(
+		new Date("5/26/2025").toISOString().split("T")[0]
+	);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		if (!itemId) {
+			console.error("Item ID is missing");
+			return;
+		}
+
+		const fetchItems = async () => {
+			try {
+				const response = await fetch(`/api/item/${itemId}`);
+				if (!response.ok) {
+					throw new Error("Failed to fetch item");
+				}
+				const data = await response.json();
+				setItem(data);
+				console.log("Fetched item:", data);
+			} catch (error) {
+				console.error("Error fetching items:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		const fetchReviews = async () => {
+			try {
+				const response = await fetch(`/api/review/item/${itemId}`);
+				if (!response.ok) {
+					throw new Error("Failed to fetch reviews");
+				}
+				const data = await response.json();
+				setItem((prevItem) => {
+					if (!prevItem) return undefined; // Ensure prevItem is defined
+					return {
+						...prevItem,
+						item_reviews: data, // Use the fetched data for reviews
+					};
+				});
+				console.log("Fetched reviews:", data);
+			} catch (error) {
+				console.error("Error fetching reviews:", error);
+			}
+		};
+
+		fetchItems();
+		fetchReviews();
+	}, [itemId]);
+
+	if (loading) return <div>Loading...</div>;
+
 	if (!item) return notFound();
+
 	const fullStars = Math.floor(item.item_rating);
 	const hasHalfStar = item.item_rating - fullStars >= 0.5;
 	const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
 	return (
 		<>
 			<div className="flex items-start gap-10">
 				<div className="w-1/2 aspect-square bg-gray-100 rounded-lg shadow flex items-center justify-center">
-					<Carousel slide={false}>
+					{/* <Carousel slide={false}>
 						{images.map((img, i) => (
 							<div key={i} className="w-full h-full">
 								<img
@@ -40,16 +87,10 @@ const Page = () => {
 								/>
 							</div>
 						))}
-					</Carousel>
+					</Carousel> */}
 				</div>
-				<div className="w-1/2 space-y-4">
+				<div className="flex flex-col gap-4 w-1/2">
 					<div className="flex justify-between items-center">
-						<div className="bg-gray-200 text-sm text-gray-600 px-3 py-1 rounded-lg">
-							{item.item_status}
-						</div>
-					</div>
-					<h1 className="text-3xl font-semibold">{item.name}</h1>
-					<div className="flex items-center gap-2">
 						<div className="flex items-center text-[#fbbf24]">
 							{[...Array(fullStars)].map((_, i) => (
 								<svg
@@ -98,15 +139,25 @@ const Page = () => {
 									<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 0 0 .95.69h4.174c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 0 0-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.538 1.118l-3.38-2.455a1 1 0 0 0-1.175 0l-3.38 2.455c-.783.57-1.838-.196-1.539-1.118l1.287-3.966a1 1 0 0 0-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.174a1 1 0 0 0 .95-.69l1.287-3.967z" />
 								</svg>
 							))}
+							<div className="text-sm text-gray-500 ms-2">
+								({item.item_rating})
+							</div>
 						</div>
-						<div className="text-sm text-gray-500">
-							({item.item_rating})
+						<div className="bg-gray-200 text-sm text-gray-600 px-3 py-1 rounded-lg">
+							{item.item_status}
 						</div>
 					</div>
+					<h1 className="text-3xl font-semibold">{item.item_name}</h1>
 					<div className="text-sm text-gray-500">
-						Owner: {owner?.first_name} {owner?.last_name}
+						{/* Owner: {owner?.first_name} {owner?.last_name} */}
+						tppoom
 					</div>
-					<div className="mt-4 space-y-4">
+					<p className="text-xs text-gray-400">
+						{item.rental_terms}
+						<br />
+						{item.penalty_terms}
+					</p>
+					<div className="space-y-2">
 						<h2 className="font-medium">
 							Choose Your Rental Period
 						</h2>
@@ -121,8 +172,24 @@ const Page = () => {
 								<input
 									id="startDate"
 									type="date"
-									min="2023-01-01"
-									max="2025-12-31"
+									onChange={(e) => {
+										const startDate = new Date(
+											e.target.value
+										);
+										const endDate = new Date(
+											(
+												document.getElementById(
+													"endDate"
+												) as HTMLInputElement
+											)?.value
+										);
+										if (endDate < startDate) {
+											alert(
+												"End date must be after start date."
+											);
+										}
+										setStartDate(e.target.value);
+									}}
 									className="rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
 								/>
 							</div>
@@ -136,47 +203,80 @@ const Page = () => {
 								<input
 									id="endDate"
 									type="date"
-									min="2023-01-01"
-									max="2025-12-31"
+									onChange={(e) => {
+										const startDate = new Date(
+											(
+												document.getElementById(
+													"startDate"
+												) as HTMLInputElement
+											)?.value
+										);
+										const endDate = new Date(
+											e.target.value
+										);
+										if (endDate < startDate) {
+											alert(
+												"End date must be after start date."
+											);
+										}
+										setEndDate(e.target.value);
+									}}
 									className="rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
 								/>
 							</div>
 						</div>
 					</div>
-					<div className="text-2xl font-bold mt-4">
-						{item.price_per_day}{" "}
-						<span className="text-sm font-normal">Baht</span>
-					</div>
-					<div>
+					<div className="flex justify-between">
+						<div className="text-2xl font-bold">
+							{item.price_per_day}{" "}
+							<span className="text-sm font-normal">Baht</span>
+						</div>
 						<a
-							href="http://localhost:3000/rental/confirm/550e8400-e29b-41d4-a716-446655440000"
-							className="bg-gray-700 text-white px-6 py-2 rounded-lg hover:opacity-90"
+							href={`/rental/confirm/${itemId}?startDate=${startDate}&endDate=${endDate}`}
+							className="bg-gray-700 text-white px-6 py-2 rounded-lg"
 						>
 							Continue
 						</a>
 					</div>
 				</div>
 			</div>
-			<div className="space-y-2 pt-6 mt-6 border-t">
-				<p className="text-xs text-gray-400">
-					{item.rental_terms}
-					<br />
-					{item.penalty_terms}
-				</p>
-				<div className="flex gap-24 text-sm text-gray-500 pt-2 justify-center">
-					<button className="hover:underline font-medium text-black">
-						Product Details
-					</button>
-					<button className="hover:underline">
-						Reviews ({reviews.length})
-					</button>
-					<button className="hover:underline">
-						Rental Terms and Conditions
-					</button>
-					<button className="hover:underline">
-						Penalty and Fine Conditions
-					</button>
-				</div>
+			<div className="flex flex-col mt-6 border-t pt-4">
+				<h2 className="text-2xl font-semibold mb-4">Reviews</h2>
+				{item.item_reviews && item.item_reviews.length > 0 ? (
+					item.item_reviews.map((review) => (
+						<div
+							key={review.id}
+							className="flex flex-col gap-2 mb-4 border-b p-4 bg-white rounded-lg shadow"
+						>
+							<div className="flex items-center gap-2">
+								<div className="flex items-center text-[#fbbf24]">
+									{[...Array(review.rating)].map((_, i) => (
+										<svg
+											key={`review-full-${i}`}
+											aria-hidden="true"
+											xmlns="http://www.w3.org/2000/svg"
+											fill="currentColor"
+											viewBox="0 0 20 20"
+											className="w-4 h-4"
+										>
+											<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 0 0 .95.69h4.174c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 0 0-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.538 1.118l-3.38-2.455a1 1 0 0 0-1.175 0l-3.38 2.455c-.783.57-1.838-.196-1.539-1.118l1.287-3.966a1 1 0 0 0-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.174a1 1 0 0 0 .95-.69l1.287-3.967z" />
+										</svg>
+									))}
+								</div>
+								<span className="text-sm text-gray-500">
+									{new Date(
+										review.created_at
+									).toLocaleDateString()}
+								</span>
+							</div>
+							<p className="text-sm text-gray-700">
+								{review.comment}
+							</p>
+						</div>
+					))
+				) : (
+					<p className="text-sm text-gray-500">No reviews yet.</p>
+				)}
 			</div>
 		</>
 	);

@@ -6,7 +6,7 @@ export interface ItemType {
 	id: string; // UUID, รหัสสินค้า, Example: 550e8400-e29b-41d4-a716-446655440000
 	owner_id: string; // VARCHAR(10), รหัสเจ้าของสินค้า, Example: 1111111111
 	category_id: string; // UUID, รหัสหมวดหมู่สินค้า, Example: 550e8400-e29b-41d4-a716-446655440000
-	name: string; // TEXT, ชื่อสินค้า, Example: JuadJuad
+	item_name: string; // TEXT, ชื่อสินค้า, Example: JuadJuad
 	description: string; // TEXT, คำอธิบายสินค้า, Example: ของแท้ไม่ปลอม
 	rental_terms: string; // TEXT, ข้อกำหนดการเช่า, Example: ยืมขั้นต่ำ 10 ปี
 	penalty_terms: string; // TEXT, ข้อกำหนดเรื่องปรับสินค้า, Example: ส่งคืนช้ามีค่าปรับ 1 แสน

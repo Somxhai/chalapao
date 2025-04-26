@@ -99,20 +99,13 @@ const Page = () => {
 									{item ? item.price_per_day * 30 : 0} บาท
 								</span>
 							</div>
-							<div className="flex justify-between">
-								<span>ค่าจัดส่ง</span>
-								<span>120 บาท</span>
-							</div>
 							<p className="text-xs text-gray-500 mt-2">
 								ทางไปรษณีย์ไทย ไปที่อยู่:{" "}
 								{rental?.delivery_residence_info}
 							</p>
 							<div className="flex justify-between font-bold border-t pt-2 mt-2">
 								<span>รวม</span>
-								<span>
-									{item ? item.price_per_day * 30 + 120 : 0}{" "}
-									บาท
-								</span>
+								<span>{item?.price_per_day * 30} บาท</span>
 							</div>
 						</div>
 					</div>

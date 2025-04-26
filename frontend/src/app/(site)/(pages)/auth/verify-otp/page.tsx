@@ -29,7 +29,7 @@ const VerifyOtp = () => {
 		}
 	};
 	return (
-		<>
+		<main className="container mx-auto px-16 py-8">
 			<div className="flex items-center justify-center min-h-screen ">
 				<div className="relative w-full max-w-md">
 					<div className="bg-white p-6 rounded-lg shadow">
@@ -96,7 +96,7 @@ const VerifyOtp = () => {
 					</div>
 				</div>
 			</div>
-		</>
+		</main>
 	);
 };
 

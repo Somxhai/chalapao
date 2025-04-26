@@ -75,10 +75,6 @@ const Page = () => {
 								{item ? item.price_per_day * 30 : 0} บาท
 							</span>
 						</div>
-						<div className="flex justify-between">
-							<span>ค่าจัดส่ง</span>
-							<span>120 บาท</span>
-						</div>
 						<p className="text-xs text-gray-500 mt-2">
 							ทางจัดส่งแบบปกติ ไปที่ผู้เช่า:{" "}
 							{address?.residence_info || "ไม่พบที่อยู่"}

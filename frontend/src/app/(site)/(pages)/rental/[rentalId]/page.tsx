@@ -54,7 +54,6 @@ const Page = () => {
 	const duration = calcDuration(rental.start_date, rental.end_date);
 	const statusText = thaiStatus(rental.status, payment?.status);
 	const totalPrice = payment?.total_price ?? item.price_per_day;
-	const shippingFee = 120;
 	const fullDeliveryAddress = renterAddress
 		? `${renterAddress.residence_info}, ${renterAddress.subdistrict}, ${renterAddress.district}, ${renterAddress.province}, ${renterAddress.postal_code}`
 		: "-";
@@ -68,7 +67,7 @@ const Page = () => {
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 						<div className="lg:col-span-2">
 							<h2 className="text-3xl font-semibold mb-1">
-								{item.name}
+								{item.item_name}
 							</h2>
 							<p className="text-gray-600 mb-6">
 								{owner.user_name}{" "}
@@ -118,7 +117,7 @@ const Page = () => {
 							<div className="w-full flex justify-center">
 								<img
 									src={imageUrl}
-									alt={item.name}
+									alt={item.item_name}
 									className="rounded-lg object-contain w-[200px] h-[200px]"
 								/>
 							</div>
@@ -126,12 +125,12 @@ const Page = () => {
 								<div className="flex gap-4 mb-2">
 									<img
 										src={imageUrl}
-										alt={item.name}
+										alt={item.item_name}
 										className="w-16 h-16 object-cover rounded-lg"
 									/>
 									<div className="flex-1 text-sm">
 										<p className="font-semibold">
-											{item.name}
+											{item.item_name}
 										</p>
 										<p>
 											เช่าจาก : {owner.first_name}{" "}
@@ -152,18 +151,9 @@ const Page = () => {
 										</span>
 									</div>
 									<div className="flex justify-between">
-										<span>ค่าจัดส่ง</span>
-										<span>
-											{shippingFee.toLocaleString()} บาท
-										</span>
-									</div>
-									<div className="flex justify-between">
 										<span>รวม</span>
 										<span className="text-lg font-bold">
-											{(
-												totalPrice + shippingFee
-											).toLocaleString()}{" "}
-											บาท
+											{totalPrice.toLocaleString()} บาท
 										</span>
 									</div>
 								</div>

@@ -1,8 +1,28 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Dropdown, DropdownItem } from "flowbite-react";
 
+import { CategoryType } from "@/types/category";
+
 const Search = () => {
+	const [categories, setCategories] = useState<CategoryType[]>([]);
+
+	useEffect(() => {
+		const fetchCategories = async () => {
+			try {
+				const response = await fetch("/api/category");
+				const data = await response.json();
+
+				setCategories(data);
+			} catch (error) {
+				console.error("Error fetching categories:", error);
+			}
+		};
+
+		fetchCategories();
+	}, []);
+
 	return (
 		<form className="w-full hidden md:flex mr-2">
 			<Dropdown
@@ -33,14 +53,11 @@ const Search = () => {
 					</button>
 				)}
 			>
-				<DropdownItem>Houses</DropdownItem>
-				<DropdownItem>Apartments</DropdownItem>
-				<DropdownItem>Cars</DropdownItem>
-				<DropdownItem>Furniture</DropdownItem>
-				<DropdownItem>Electronics</DropdownItem>
-				<DropdownItem>Tools</DropdownItem>
-				<DropdownItem>Clothing</DropdownItem>
-				<DropdownItem>Books</DropdownItem>
+				{categories.map((category, index) => (
+					<DropdownItem key={index} className="text-sm">
+						{category.name}
+					</DropdownItem>
+				))}
 			</Dropdown>
 			<div className="relative w-full">
 				<input

@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 import { Button, Label, TextInput } from "flowbite-react";
+import { authClient } from "@/lib/auth-client";
 
 const SignUp = () => {
-	const [username, setUsername] = useState("");
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [confirmPassword, setConfirmPassword] = useState("");
+	const [username, setUsername] = useState("student");
+	const [email, setEmail] = useState("student@gmail.com");
+	const [password, setPassword] = useState("student123");
+	const [confirmPassword, setConfirmPassword] = useState("student123");
 	const [usernameError, setUsernameError] = useState("");
 	const [emailError, setEmailError] = useState("");
 	const [passwordError, setPasswordError] = useState("");
@@ -53,7 +54,7 @@ const SignUp = () => {
 			setConfirmPasswordError("");
 		}
 	};
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (username.length < 3) {
 			setUsernameError("Username must be at least 3 characters long");
@@ -73,11 +74,11 @@ const SignUp = () => {
 			password.length >= 6 &&
 			confirmPassword === password
 		) {
-			console.log("Form submitted");
+			console.log("Form submitted successfully");
 		}
 	};
 	return (
-		<>
+		<main className="container mx-auto px-16 py-8">
 			<div className="flex items-center justify-center min-h-screen">
 				<div className="relative w-full max-w-md">
 					<div className="flex justify-between mb-4">
@@ -208,7 +209,7 @@ const SignUp = () => {
 					</div>
 				</div>
 			</div>
-		</>
+		</main>
 	);
 };
 

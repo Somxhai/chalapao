@@ -41,7 +41,7 @@ const SignIn = () => {
 		}
 	};
 	return (
-		<>
+		<main className="container mx-auto px-16 py-8">
 			<div className="flex items-center justify-center min-h-screen">
 				<div className="relative w-full max-w-md">
 					<div className="flex justify-between mb-4">
@@ -145,7 +145,7 @@ const SignIn = () => {
 					</div>
 				</div>
 			</div>
-		</>
+		</main>
 	);
 };
 
