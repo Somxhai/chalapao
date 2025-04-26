@@ -8,6 +8,7 @@ import {
   CREATE_RENTAL_TABLE,
   CREATE_REVIEW_IMAGE_TABLE,
   CREATE_REVIEW_ITEM_TABLE,
+  CREATE_REVIEW_USER_IMAGE_TABLE,
   CREATE_REVIEW_USER_TABLE,
 } from "../database/sql/app.ts";
 
@@ -33,12 +34,12 @@ export async function setupDatabase(client: PoolClient) {
   try {
     await client.query(CREATE_UPDATE_AT_TRIGGER);
 
-    await client.query(CREATE_USER_INFO_TABLE);
     await client.query(CREATE_USER_TABLE);
     await client.query(CREATE_VERIFICATION_TABLE);
     await client.query(CREATE_SESSION_TABLE);
     await client.query(CREATE_ACCOUNT_TABLE);
 
+    await client.query(CREATE_USER_INFO_TABLE);
     await client.query(CREATE_ADDRESS_TABLE);
 
     await client.query(CREATE_CATEGORY_TABLE);
@@ -53,6 +54,8 @@ export async function setupDatabase(client: PoolClient) {
     await client.query(CREATE_KEYWORD_TABLE);
     await client.query(CREATE_ITEM_IMAGE_TABLE);
 
+    await client.query(CREATE_REVIEW_USER_IMAGE_TABLE);
+
     const tables = [
       "user",
       "user_info",
@@ -64,6 +67,7 @@ export async function setupDatabase(client: PoolClient) {
       "review_item",
       "review_user",
       "review_item_image",
+      "review_user_image",
     ];
 
     for (const table of tables) {

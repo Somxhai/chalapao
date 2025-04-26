@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS
     user_image TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    user_type user_type_enum NOT NULL DEFAULT 'renter' CHECK (user_type IN ('renter', 'lessor', 'admin')),
+    user_type TEXT NOT NULL DEFAULT 'renter' CHECK (user_type IN ('renter', 'lessor', 'admin')),
 
     CONSTRAINT user_pkey PRIMARY KEY (id),
     CONSTRAINT user_email_unique UNIQUE (email)
