@@ -164,3 +164,10 @@ itemApp.delete("/:product_id", async (c) => {
   const result = await tryCatchService(() => deleteItemById(id, user.id));
   return c.json(result);
 });
+
+itemApp.get("/all/", async (c) => {
+  const offset = parseInt(c.req.query("offset") || "0");
+  const limit = parseInt(c.req.query("limit") || "30");
+  const items = await tryCatchService(() => getItems(offset, limit));
+  return c.json(items);
+});

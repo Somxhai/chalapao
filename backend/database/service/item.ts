@@ -1,19 +1,57 @@
 import { UUIDTypes } from "uuid";
-import { Item } from "../../type/app.ts";
+import { FullItem, Item } from "../../type/app.ts";
 import { safeQuery } from "../../lib/utils.ts";
 
 export const getItems = async (
   offset = 0,
   limit = 30,
-): Promise<Item[]> =>
+): Promise<FullItem[]> =>
   await safeQuery(
     (client) =>
-      client.query<Item>(
-        `SELECT i.*, COALESCE(array_agg(ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images
-        FROM "item" i
-        LEFT JOIN item_image ii ON i.id = ii.item_id
-        GROUP BY i.id
-        LIMIT $1 OFFSET $2;`,
+      client.query<FullItem>(
+        `
+SELECT
+  i.*,
+  COALESCE(array_agg(DISTINCT ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images,
+  COALESCE(array_agg(DISTINCT k.keyword) FILTER (WHERE k.keyword IS NOT NULL), '{}') AS keywords,
+  c.name AS category_name,
+  jsonb_build_object(
+    'id', u.id,
+    'first_name', u.first_name,
+    'last_name', u.last_name,
+    'gender', u.gender,
+    'birth_date', u.birth_date,
+    'citizen_id', u.citizen_id,
+    'phone_number', u.phone_number,
+    'created_at', u.created_at,
+    'updated_at', u.updated_at,
+    'addresses', COALESCE(
+      jsonb_agg(
+        DISTINCT jsonb_build_object(
+          'id', a.id,
+          'user_id', a.user_id,
+          'is_primary', a.is_primary,
+          'residence_info', a.residence_info,
+          'sub_district', a.sub_district,
+          'district', a.district,
+          'province', a.province,
+          'postal_code', a.postal_code,
+          'created_at', a.created_at,
+          'updated_at', a.updated_at
+        )
+      ) FILTER (WHERE a.id IS NOT NULL),
+      '[]'
+    )
+  ) AS user_info
+FROM "item" i
+LEFT JOIN item_image ii ON i.id = ii.item_id
+LEFT JOIN keyword k ON i.id = k.item_id
+LEFT JOIN category c ON i.category_id = c.id
+LEFT JOIN user_info u ON i.owner_id = u.user_id
+LEFT JOIN address a ON u.user_id = a.user_id
+GROUP BY i.id, c.name, u.id, u.first_name, u.last_name, u.gender, u.birth_date, u.citizen_id, u.phone_number, u.created_at, u.updated_at
+LIMIT $1 OFFSET $2;
+`,
         [limit, offset],
       ),
     `Failed to get items: offset = ${offset}, limit = ${limit}`,
@@ -23,31 +61,152 @@ export const getItemsByCategory = async (
   id: UUIDTypes,
   offset = 0,
   limit = 30,
-): Promise<Item[]> =>
+): Promise<FullItem[]> =>
   await safeQuery(
     (client) =>
-      client.query<Item>(
-        `SELECT * FROM "item" WHERE category_id = $1 LIMIT $2 OFFSET $3;`,
+      client.query<FullItem>(
+        `SELECT
+  i.*,
+  COALESCE(array_agg(DISTINCT ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images,
+  COALESCE(array_agg(DISTINCT k.keyword) FILTER (WHERE k.keyword IS NOT NULL), '{}') AS keywords,
+  c.name AS category_name,
+  jsonb_build_object(
+    'id', u.id,
+    'first_name', u.first_name,
+    'last_name', u.last_name,
+    'gender', u.gender,
+    'birth_date', u.birth_date,
+    'citizen_id', u.citizen_id,
+    'phone_number', u.phone_number,
+    'created_at', u.created_at,
+    'updated_at', u.updated_at,
+    'addresses', COALESCE(
+      jsonb_agg(
+        DISTINCT jsonb_build_object(
+          'id', a.id,
+          'user_id', a.user_id,
+          'is_primary', a.is_primary,
+          'residence_info', a.residence_info,
+          'sub_district', a.sub_district,
+          'district', a.district,
+          'province', a.province,
+          'postal_code', a.postal_code,
+          'created_at', a.created_at,
+          'updated_at', a.updated_at
+        )
+      ) FILTER (WHERE a.id IS NOT NULL),
+      '[]'
+    )
+  ) AS user_info
+FROM "item" i
+LEFT JOIN item_image ii ON i.id = ii.item_id
+LEFT JOIN keyword k ON i.id = k.item_id
+LEFT JOIN category c ON i.category_id = c.id
+LEFT JOIN user_info u ON i.owner_id = u.user_id
+LEFT JOIN address a ON u.user_id = a.user_id
+WHERE i.category_id = $1
+GROUP BY i.id, c.name, u.id, u.first_name, u.last_name, u.gender, u.birth_date, u.citizen_id, u.phone_number, u.created_at, u.updated_at
+LIMIT $2 OFFSET $3`,
         [id, limit, offset],
       ),
     `Failed to get items by category: ${id}`,
   ).then((res) => res.rows);
 
-export const getItemsByUserId = async (id: string): Promise<Item[]> =>
+export const getItemsByUserId = async (id: string): Promise<FullItem[]> =>
   await safeQuery(
     (client) =>
-      client.query<Item>(
-        `SELECT * FROM "item" WHERE owner_id = $1;`,
+      client.query<FullItem>(
+        `SELECT
+  i.*,
+  COALESCE(array_agg(DISTINCT ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images,
+  COALESCE(array_agg(DISTINCT k.keyword) FILTER (WHERE k.keyword IS NOT NULL), '{}') AS keywords,
+  c.name AS category_name,
+  jsonb_build_object(
+    'id', u.id,
+    'first_name', u.first_name,
+    'last_name', u.last_name,
+    'gender', u.gender,
+    'birth_date', u.birth_date,
+    'citizen_id', u.citizen_id,
+    'phone_number', u.phone_number,
+    'created_at', u.created_at,
+    'updated_at', u.updated_at,
+    'addresses', COALESCE(
+      jsonb_agg(
+        DISTINCT jsonb_build_object(
+          'id', a.id,
+          'user_id', a.user_id,
+          'is_primary', a.is_primary,
+          'residence_info', a.residence_info,
+          'sub_district', a.sub_district,
+          'district', a.district,
+          'province', a.province,
+          'postal_code', a.postal_code,
+          'created_at', a.created_at,
+          'updated_at', a.updated_at
+        )
+      ) FILTER (WHERE a.id IS NOT NULL),
+      '[]'
+    )
+  ) AS user_info
+FROM "item" i
+LEFT JOIN item_image ii ON i.id = ii.item_id
+LEFT JOIN keyword k ON i.id = k.item_id
+LEFT JOIN category c ON i.category_id = c.id
+LEFT JOIN user_info u ON i.owner_id = u.user_id
+LEFT JOIN address a ON u.user_id = a.user_id
+WHERE i.owner_id = $1
+GROUP BY i.id, c.name, u.id, u.first_name, u.last_name, u.gender, u.birth_date, u.citizen_id, u.phone_number, u.created_at, u.updated_at;`,
         [id],
       ),
     `Failed to get items by user ID: ${id}`,
   ).then((res) => res.rows);
 
-export const getItemById = async (id: UUIDTypes): Promise<Item> =>
+export const getItemById = async (id: UUIDTypes): Promise<FullItem> =>
   await safeQuery(
     (client) =>
-      client.query<Item>(
-        `SELECT * FROM "item" WHERE id = $1;`,
+      client.query<FullItem>(
+        `SELECT
+  i.*,
+  COALESCE(array_agg(DISTINCT ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images,
+  COALESCE(array_agg(DISTINCT k.keyword) FILTER (WHERE k.keyword IS NOT NULL), '{}') AS keywords,
+  c.name AS category_name,
+  jsonb_build_object(
+    'id', u.id,
+    'first_name', u.first_name,
+    'last_name', u.last_name,
+    'gender', u.gender,
+    'birth_date', u.birth_date,
+    'citizen_id', u.citizen_id,
+    'phone_number', u.phone_number,
+    'created_at', u.created_at,
+    'updated_at', u.updated_at,
+    'addresses', COALESCE(
+      jsonb_agg(
+        DISTINCT jsonb_build_object(
+          'id', a.id,
+          'user_id', a.user_id,
+          'is_primary', a.is_primary,
+          'residence_info', a.residence_info,
+          'sub_district', a.sub_district,
+          'district', a.district,
+          'province', a.province,
+          'postal_code', a.postal_code,
+          'created_at', a.created_at,
+          'updated_at', a.updated_at
+        )
+      ) FILTER (WHERE a.id IS NOT NULL),
+      '[]'
+    )
+  ) AS user_info
+FROM "item" i
+LEFT JOIN item_image ii ON i.id = ii.item_id
+LEFT JOIN keyword k ON i.id = k.item_id
+LEFT JOIN category c ON i.category_id = c.id
+LEFT JOIN user_info u ON i.owner_id = u.user_id
+LEFT JOIN address a ON u.user_id = a.user_id
+WHERE i.id = $1
+GROUP BY i.id, c.name, u.id, u.first_name, u.last_name, u.gender, u.birth_date, u.citizen_id, u.phone_number, u.created_at, u.updated_at;`,
         [id],
       ),
     `Failed to get item by ID: ${id}`,
@@ -56,10 +215,10 @@ export const getItemById = async (id: UUIDTypes): Promise<Item> =>
 export const createItem = async (
   item: Item,
   owner_id: UUIDTypes,
-): Promise<Item> =>
+): Promise<FullItem> =>
   await safeQuery(
     (client) =>
-      client.query<Item>(
+      client.query<FullItem>(
         `
         INSERT INTO "item" (
           owner_id, item_name, description, rental_terms,
@@ -85,10 +244,10 @@ export const createItem = async (
 export const updateItem = async (
   item: Item,
   owner_id: UUIDTypes,
-): Promise<Item> =>
+): Promise<FullItem> =>
   await safeQuery(
     (client) =>
-      client.query<Item>(
+      client.query<FullItem>(
         `
         UPDATE "item"
         SET item_name = $1, description = $2, rental_terms = $3,

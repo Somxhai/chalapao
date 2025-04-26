@@ -1,4 +1,8 @@
-import { assertEquals, assertExists } from "jsr:@std/assert";
+import {
+  assertArrayIncludes,
+  assertEquals,
+  assertExists,
+} from "jsr:@std/assert";
 import { rentalApp } from "../handler/rental.ts";
 import { itemApp } from "../handler/item.ts";
 import { createTestItem, createUser } from "./utils.ts";
@@ -85,6 +89,45 @@ Deno.test("Rental routes", async (t) => {
     const json: Rental = await res.json();
     assertEquals(json.status, "accepted");
   });
+
+  await t.step("GET /rental/:rental_id - get rental by id", async () => {
+    const res = await rentalApp.request(`/${rentalId}`, {
+      method: "GET",
+      headers: {
+        cookie: renterCookie,
+        "Content-Type": "application/json",
+      },
+    });
+
+    assertEquals(res.status, 200);
+    const rental = await res.json();
+    assertEquals(rental.id, rentalId);
+    assertExists(rental.item);
+    assertExists(rental.renter_info);
+    assertExists(rental.lessor_info);
+  });
+
+  await t.step(
+    "GET /rental/user/:user_id - get rentals by user id",
+    async () => {
+      const res = await rentalApp.request(`/user/${renterUser.id}`, {
+        method: "GET",
+        headers: {
+          cookie: renterCookie,
+          "Content-Type": "application/json",
+        },
+      });
+
+      assertEquals(res.status, 200);
+      const rentals = await res.json();
+      console.log("Rentals", rentals);
+      assertEquals(Array.isArray(rentals), true);
+      assertArrayIncludes(
+        rentals.map((r: Rental) => r.id),
+        [rentalId],
+      );
+    },
+  );
 
   await t.step("DELETE /rental/:rental_id - delete rental", async () => {
     const res = await rentalApp.request(`/${rentalId}`, {

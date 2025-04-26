@@ -4,7 +4,7 @@ import {
   assertExists,
 } from "jsr:@std/assert";
 import { itemApp } from "../handler/item.ts";
-import { Item } from "../type/app.ts";
+import { FullItem, Item } from "../type/app.ts";
 import { createTestItem, createUser } from "./utils.ts";
 
 Deno.test("Item routes", async (t) => {
@@ -25,14 +25,14 @@ Deno.test("Item routes", async (t) => {
     const res = await itemApp.request(`/${createdItem.id}`);
     assertEquals(res.status, 200);
     const fetched = await res.json();
-    console.log(fetched);
+    console.log("Items", fetched);
     assertEquals(fetched.id, createdItem.id);
   });
 
   await t.step("GET / - fetch all items", async () => {
     const res = await itemApp.request("/");
     assertEquals(res.status, 200);
-    const items: Item[] = await res.json();
+    const items: FullItem[] = await res.json();
     // console.log(items);
     assertExists(items.find((i) => i.id === createdItem.id));
   });
@@ -40,7 +40,7 @@ Deno.test("Item routes", async (t) => {
   await t.step("GET /user/:user_id - fetch items by user", async () => {
     const res = await itemApp.request(`/user/${user.id}`);
     assertEquals(res.status, 200);
-    const items: Item[] = await res.json();
+    const items: FullItem[] = await res.json();
     assertArrayIncludes(items.map((i) => i.id), [createdItem.id]);
   });
 

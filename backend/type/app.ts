@@ -88,3 +88,10 @@ export interface UserInfo {
   created_at: string;
   updated_at: string;
 }
+
+export interface FullItem extends Item {
+  images: string[]; // from item_image
+  keywords: string[]; // from keyword
+  category_name: string | null; // from category
+  user_info: UserInfo;
+}

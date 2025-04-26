@@ -6,6 +6,8 @@ import { tryCatchService } from "../lib/utils.ts";
 import {
   createRental,
   deleteRental,
+  getRentalById,
+  getRentalsByUserId,
   RentalInput,
   updateRentalStatus,
 } from "../database/service/rental.ts";
@@ -19,6 +21,30 @@ export const rentalApp = new Hono<{
 }>();
 
 rentalApp.use(authMiddleware);
+
+/**
+ * GET /rental/:rental_id
+ * @description Get rental details by rental ID.
+ */
+rentalApp.get("/:rental_id", async (c) => {
+  const rentalId = c.req.param("rental_id");
+
+  const rental = await tryCatchService(() => getRentalById(rentalId));
+
+  return c.json(rental);
+});
+
+/**
+ * GET /rentals/user/:user_id
+ * @description Get all rentals by user ID.
+ */
+rentalApp.get("/user/:user_id", async (c) => {
+  const userId = c.req.param("user_id");
+
+  const rentals = await tryCatchService(() => getRentalsByUserId(userId));
+
+  return c.json(rentals);
+});
 
 /**
  * PUT /rental/:rental_id/status

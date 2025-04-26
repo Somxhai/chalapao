@@ -111,3 +111,153 @@ export const createRentalAddress = async (
       ),
     `Failed to create rental address`,
   ).then((res) => res.rows[0]?.id);
+
+export const getRentalById = async (rentalId: UUIDTypes): Promise<Rental> =>
+  await safeQuery(
+    (client) =>
+      client.query<Rental>(
+        `
+        SELECT
+          r.*,
+          jsonb_build_object(
+            'id', renter.id,
+            'first_name', renter.first_name,
+            'last_name', renter.last_name,
+            'gender', renter.gender,
+            'birth_date', renter.birth_date,
+            'citizen_id', renter.citizen_id,
+            'phone_number', renter.phone_number,
+            'created_at', renter.created_at,
+            'updated_at', renter.updated_at
+          ) AS renter_info,
+          jsonb_build_object(
+            'id', lessor.id,
+            'first_name', lessor.first_name,
+            'last_name', lessor.last_name,
+            'gender', lessor.gender,
+            'birth_date', lessor.birth_date,
+            'citizen_id', lessor.citizen_id,
+            'phone_number', lessor.phone_number,
+            'created_at', lessor.created_at,
+            'updated_at', lessor.updated_at
+          ) AS lessor_info,
+          jsonb_build_object(
+            'id', i.id,
+            'item_name', i.item_name,
+            'description', i.description,
+            'price_per_day', i.price_per_day
+          ) AS item,
+          jsonb_build_object(
+            'id', da.id,
+            'residence_info', da.residence_info,
+            'sub_district', da.sub_district,
+            'district', da.district,
+            'province', da.province,
+            'postal_code', da.postal_code
+          ) AS delivery_address_info,
+          jsonb_build_object(
+            'id', ra.id,
+            'residence_info', ra.residence_info,
+            'sub_district', ra.sub_district,
+            'district', ra.district,
+            'province', ra.province,
+            'postal_code', ra.postal_code
+          ) AS return_address_info,
+          jsonb_build_object(
+            'id', p.id,
+            'status', p.status,
+            'created_at', p.created_at,
+            'updated_at', p.updated_at
+          ) AS payment
+        FROM rental r
+        LEFT JOIN item i ON r.item_id = i.id
+        LEFT JOIN user_info renter ON r.renter_id = renter.user_id
+        LEFT JOIN user_info lessor ON i.owner_id = lessor.user_id
+        LEFT JOIN rental_address da ON r.delivery_address = da.id
+        LEFT JOIN rental_address ra ON r.return_address = ra.id
+        LEFT JOIN payment p ON p.renter_id = r.renter_id
+        WHERE r.id = $1
+        GROUP BY
+          r.id, renter.id, lessor.id, i.id,
+          da.id, ra.id, p.id
+        `,
+        [rentalId],
+      ),
+    `Failed to get rental by id: ${rentalId}`,
+  ).then((res) => res.rows[0]);
+
+export const getRentalsByUserId = async (
+  userId: UUIDTypes,
+): Promise<Rental[]> =>
+  await safeQuery(
+    (client) =>
+      client.query<Rental>(
+        `
+        SELECT
+          r.*,
+          jsonb_build_object(
+            'id', renter.id,
+            'first_name', renter.first_name,
+            'last_name', renter.last_name,
+            'gender', renter.gender,
+            'birth_date', renter.birth_date,
+            'citizen_id', renter.citizen_id,
+            'phone_number', renter.phone_number,
+            'created_at', renter.created_at,
+            'updated_at', renter.updated_at
+          ) AS renter_info,
+          jsonb_build_object(
+            'id', lessor.id,
+            'first_name', lessor.first_name,
+            'last_name', lessor.last_name,
+            'gender', lessor.gender,
+            'birth_date', lessor.birth_date,
+            'citizen_id', lessor.citizen_id,
+            'phone_number', lessor.phone_number,
+            'created_at', lessor.created_at,
+            'updated_at', lessor.updated_at
+          ) AS lessor_info,
+          jsonb_build_object(
+            'id', i.id,
+            'item_name', i.item_name,
+            'description', i.description,
+            'price_per_day', i.price_per_day
+          ) AS item,
+          jsonb_build_object(
+            'id', da.id,
+            'residence_info', da.residence_info,
+            'sub_district', da.sub_district,
+            'district', da.district,
+            'province', da.province,
+            'postal_code', da.postal_code
+          ) AS delivery_address_info,
+          jsonb_build_object(
+            'id', ra.id,
+            'residence_info', ra.residence_info,
+            'sub_district', ra.sub_district,
+            'district', ra.district,
+            'province', ra.province,
+            'postal_code', ra.postal_code
+          ) AS return_address_info,
+          jsonb_build_object(
+            'id', p.id,
+            'status', p.status,
+            'created_at', p.created_at,
+            'updated_at', p.updated_at
+          ) AS payment
+        FROM rental r
+        LEFT JOIN item i ON r.item_id = i.id
+        LEFT JOIN user_info renter ON r.renter_id = renter.user_id
+        LEFT JOIN user_info lessor ON i.owner_id = lessor.user_id
+        LEFT JOIN rental_address da ON r.delivery_address = da.id
+        LEFT JOIN rental_address ra ON r.return_address = ra.id
+        LEFT JOIN payment p ON p.renter_id = r.renter_id
+        WHERE r.renter_id = $1
+        GROUP BY
+          r.id, renter.id, lessor.id, i.id,
+          da.id, ra.id, p.id
+        `,
+        [userId],
+      ),
+    `Failed to get rentals for user: ${userId}`,
+  ).then((res) => res.rows);
