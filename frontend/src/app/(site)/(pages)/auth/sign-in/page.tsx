@@ -4,20 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 import { Button, Label, TextInput } from "flowbite-react";
+import { signIn } from "@/lib/auth-client";
 
 const SignIn = () => {
-	const [username, setUsername] = useState("");
-	const [password, setPassword] = useState("");
-	const [usernameError, setUsernameError] = useState("");
+	const [email, setEmail] = useState("student@gmail.com");
+	const [password, setPassword] = useState("student123");
 	const [passwordError, setPasswordError] = useState("");
-	const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
-		setUsername(value);
-		if (value.length < 3) {
-			setUsernameError("Username must be at least 3 characters long");
-		} else {
-			setUsernameError("");
-		}
+		setEmail(value);
 	};
 	const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
@@ -30,14 +25,27 @@ const SignIn = () => {
 	};
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (username.length < 3) {
-			setUsernameError("Username must be at least 3 characters long");
-		}
 		if (password.length < 6) {
 			setPasswordError("Password must be at least 6 characters long");
 		}
-		if (username.length >= 3 && password.length >= 6) {
-			console.log("Form submitted");
+		if (email.length >= 3 && password.length >= 6) {
+			signIn
+				.email({
+					email: email, // Assuming email is the email
+					password,
+					callbackURL: "/",
+					rememberMe: false,
+				})
+				.then(({ data, error }) => {
+					if (error) {
+						console.error("Sign-in failed:", error);
+					} else {
+						console.log("Sign-in successful:", data);
+					}
+				})
+				.catch((error) => {
+					console.error("An unexpected error occurred:", error);
+				});
 		}
 	};
 	return (
@@ -78,24 +86,16 @@ const SignIn = () => {
 							</div>
 							<div>
 								<div className="block">
-									<Label
-										htmlFor="username"
-										className="text-1xl"
-									>
-										Username
+									<Label htmlFor="email" className="text-1xl">
+										Email
 									</Label>
 									<TextInput
-										id="username"
-										type="text"
+										id="email"
+										type="email"
 										required
-										value={username}
-										onChange={handleUsernameChange}
+										value={email}
+										onChange={handleEmailChange}
 									/>
-									{usernameError && (
-										<p className="text-red-500 text-xs">
-											{usernameError}
-										</p>
-									)}
 								</div>
 							</div>
 							<div>

@@ -1,7 +1,11 @@
-import { assertEquals, assertExists } from "jsr:@std/assert";
+import {
+  assertArrayIncludes,
+  assertEquals,
+  assertExists,
+} from "jsr:@std/assert";
 import { rentalApp } from "../handler/rental.ts";
 import { itemApp } from "../handler/item.ts";
-import { createUser } from "./utils.ts";
+import { createTestItem, createUser } from "./utils.ts";
 import { Item } from "../type/app.ts";
 import { Rental, RentalAddress } from "../type/rental.ts";
 import { UUIDTypes } from "uuid";
@@ -18,35 +22,11 @@ Deno.test("Rental routes", async (t) => {
     throw new Error("Renter creation failed");
   }
 
-  const newItem: Item = {
-    owner_id: lessorUser.id,
-    price_per_day: 100,
-    description: "Test item for rental",
-    item_name: "Rental item",
-    penalty_terms: "Penalty",
-    rental_terms: "Rental",
-    item_status: "available",
-  };
-
-  let item: Item;
+  let item: Item & { paths: string[] };
   let rentalId: UUIDTypes;
 
   await t.step("Create Item", async () => {
-    const res = await itemApp.request("/", {
-      method: "POST",
-      headers: {
-        cookie: lessorCookie,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newItem),
-    });
-
-    assertEquals(res.status, 200);
-    const created: Item = await res.json();
-    assertExists(created.id);
-    if (created) {
-      item = created;
-    }
+    item = await createTestItem(lessorUser.id, lessorCookie);
   });
 
   await t.step("POST /rental - create rental", async () => {
@@ -109,6 +89,45 @@ Deno.test("Rental routes", async (t) => {
     const json: Rental = await res.json();
     assertEquals(json.status, "accepted");
   });
+
+  await t.step("GET /rental/:rental_id - get rental by id", async () => {
+    const res = await rentalApp.request(`/${rentalId}`, {
+      method: "GET",
+      headers: {
+        cookie: renterCookie,
+        "Content-Type": "application/json",
+      },
+    });
+
+    assertEquals(res.status, 200);
+    const rental = await res.json();
+    assertEquals(rental.id, rentalId);
+    assertExists(rental.item);
+    assertExists(rental.renter_info);
+    assertExists(rental.lessor_info);
+  });
+
+  await t.step(
+    "GET /rental/user/:user_id - get rentals by user id",
+    async () => {
+      const res = await rentalApp.request(`/user/${renterUser.id}`, {
+        method: "GET",
+        headers: {
+          cookie: renterCookie,
+          "Content-Type": "application/json",
+        },
+      });
+
+      assertEquals(res.status, 200);
+      const rentals = await res.json();
+      console.log("Rentals", rentals);
+      assertEquals(Array.isArray(rentals), true);
+      assertArrayIncludes(
+        rentals.map((r: Rental) => r.id),
+        [rentalId],
+      );
+    },
+  );
 
   await t.step("DELETE /rental/:rental_id - delete rental", async () => {
     const res = await rentalApp.request(`/${rentalId}`, {

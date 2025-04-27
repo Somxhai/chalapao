@@ -5,4 +5,9 @@
 ./**/readme.md
 ./**/.gitignore
 
+./backend/images/item/*
+./backend/images/review/*
+
+**/.DS_Store
+
 !.env.example

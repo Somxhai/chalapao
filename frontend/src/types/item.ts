@@ -14,7 +14,7 @@ export interface ItemType {
 	price_per_day: number; // NUMERIC, ราคาเช่าต่อวัน, Example: 50.00
 	created_at: string; // TIMESTAMPTZ, วันที่สร้าง, Format: YYYY-MM-DD HH:MI:SS, Example: 2024-03-22 22:17:30
 	updated_at: string; // TIMESTAMPTZ, วันที่อัปเดต, Format: YYYY-MM-DD HH:MI:SS, Example: 2024-03-22 22:19:00
-	item_images: ItemImageType[] | []; // รูปภาพสินค้า
+	images: string[] | []; // รูปภาพสินค้า
 	keywords: KeywordType[] | []; // คีย์เวิร์ดสินค้า
 	item_reviews: ItemReviewType[] | []; // รีวิวสินค้า
 	item_rating: number | 0; // FLOAT(0-5), คะแนนเฉลี่ยของผู้ใช้

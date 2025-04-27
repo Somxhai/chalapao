@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 import { Button, Label, TextInput } from "flowbite-react";
-import { authClient } from "@/lib/auth-client";
+import { signUp } from "@/lib/auth-client";
 
 const SignUp = () => {
 	const [username, setUsername] = useState("student");
@@ -74,7 +74,38 @@ const SignUp = () => {
 			password.length >= 6 &&
 			confirmPassword === password
 		) {
-			console.log("Form submitted successfully");
+			try {
+				const { data, error } = await signUp.email(
+					{
+						email,
+						password,
+						name: username,
+						callbackURL: "/sign-in",
+					},
+					{
+						onRequest: (ctx) => {
+							console.log("Requesting signup...");
+						},
+						onSuccess: (ctx) => {
+							console.log("Signup successful:", ctx.data);
+							window.location.href = "/sign-in";
+						},
+						onError: (ctx) => {
+							console.error("Signup error:", ctx.error);
+							alert(ctx.error.message);
+						},
+					}
+				);
+
+				if (error) {
+					throw new Error(error.message);
+				}
+
+				console.log("Signup data:", data);
+			} catch (error: any) {
+				console.error("Signup error:", error);
+				alert(error.message);
+			}
 		}
 	};
 	return (

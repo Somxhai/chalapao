@@ -6,11 +6,14 @@ import { useParams, notFound } from "next/navigation";
 import { Carousel } from "flowbite-react";
 
 import { ItemType } from "@/types/item";
+import { ItemReviewType } from "@/types/item_review";
 
 const Page = () => {
 	const { itemId } = useParams();
 
 	const [item, setItem] = useState<ItemType>();
+	const [itemReviews, setItemReviews] = useState<ItemReviewType[]>([]);
+
 	const [startDate, setStartDate] = useState<string>(
 		new Date("4/26/2025").toISOString().split("T")[0]
 	);
@@ -48,13 +51,7 @@ const Page = () => {
 					throw new Error("Failed to fetch reviews");
 				}
 				const data = await response.json();
-				setItem((prevItem) => {
-					if (!prevItem) return undefined; // Ensure prevItem is defined
-					return {
-						...prevItem,
-						item_reviews: data, // Use the fetched data for reviews
-					};
-				});
+				setItemReviews(data);
 				console.log("Fetched reviews:", data);
 			} catch (error) {
 				console.error("Error fetching reviews:", error);
@@ -77,17 +74,17 @@ const Page = () => {
 		<>
 			<div className="flex items-start gap-10">
 				<div className="w-1/2 aspect-square bg-gray-100 rounded-lg shadow flex items-center justify-center">
-					{/* <Carousel slide={false}>
-						{images.map((img, i) => (
+					<Carousel slide={false}>
+						{item.images.map((img, i) => (
 							<div key={i} className="w-full h-full">
 								<img
-									src={img.image_url}
-									alt={`image-${i}`}
-									className="w-full h-full object-cover"
+									className="rounded-t-lg aspect-square w-full object-cover"
+									src={`http://localhost:8787/${img}`}
+									alt={item.item_name}
 								/>
 							</div>
 						))}
-					</Carousel> */}
+					</Carousel>
 				</div>
 				<div className="flex flex-col gap-4 w-1/2">
 					<div className="flex justify-between items-center">
@@ -242,8 +239,8 @@ const Page = () => {
 			</div>
 			<div className="flex flex-col mt-6 border-t pt-4">
 				<h2 className="text-2xl font-semibold mb-4">Reviews</h2>
-				{item.item_reviews && item.item_reviews.length > 0 ? (
-					item.item_reviews.map((review) => (
+				{itemReviews && itemReviews.length > 0 ? (
+					itemReviews.map((review) => (
 						<div
 							key={review.id}
 							className="flex flex-col gap-2 mb-4 border-b p-4 bg-white rounded-lg shadow"

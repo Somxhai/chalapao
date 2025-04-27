@@ -1,6 +1,10 @@
+import { UUIDTypes } from "uuid";
 import { pool } from "../database/db.ts";
 import { auth } from "../lib/auth.ts";
 import { APIError } from "better-auth/api";
+import { Item } from "../type/app.ts";
+import { itemApp } from "../handler/item.ts";
+import { assertEquals } from "@std/assert";
 
 type UserType = "renter" | "lessor" | "admin";
 
@@ -73,4 +77,39 @@ const tryToSignUpUser = async (email: string, password: string) => {
       }
     }
   }
+};
+
+export const createTestItem = async (user_id: UUIDTypes, cookie: string) => {
+  const fakeImage = new File(
+    [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], // tiny fake PNG header
+    "test.png",
+    { type: "image/png" },
+  );
+  const newItem: Item = {
+    owner_id: user_id, // use the actual logged-in user's id
+    price_per_day: 100,
+    description: "A test item",
+    item_name: "Test item",
+    penalty_terms: "A test penalty term",
+    rental_terms: "A test rental term",
+    item_status: "available",
+  };
+
+  const formData = new FormData();
+  formData.append("item", JSON.stringify(newItem));
+  formData.append("files", fakeImage);
+
+  const res = await itemApp.request("/", {
+    method: "POST",
+    body: formData,
+    headers: {
+      cookie,
+    },
+  });
+
+  assertEquals(res.status, 200);
+  const createdItem: Item & { paths: string[] } = await res.json();
+  assertEquals(createdItem.item_name, newItem.item_name);
+  assertEquals(createdItem.owner_id, user_id);
+  return createdItem;
 };

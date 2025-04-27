@@ -8,7 +8,7 @@ export const auth = betterAuth({
 	advanced: {
 		generateId: () => uuidv4(),
 	},
-	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000", // Replace with your actual base URL
+	baseURL: process.env.BETTER_AUTH_URL,
 	database: new pg.Pool({
 		connectionString: process.env.DATABASE_URL,
 	}),

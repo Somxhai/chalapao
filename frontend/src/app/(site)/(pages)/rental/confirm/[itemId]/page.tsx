@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useParams, notFound } from "next/navigation";
 
 import Step from "@/components/Rental/step";
 import Header from "@/components/Header";
 
 import { ItemType } from "@/types/item";
+import { useSession } from "@/lib/auth-client";
 
 const Page = () => {
 	const { itemId } = useParams();
+
+	const session = useSession();
+
 	// const item = items.find((i) => i.id === itemId);
 	// const lender = users.find((u) => u.id === item?.owner_id);
 	// const renter = users.find((u) => u.user_type === "renter");
@@ -18,6 +22,29 @@ const Page = () => {
 
 	const [item, setItem] = useState<ItemType>();
 	const [loading, setLoading] = useState(true);
+	const [user, setUser] = useState<any>(null);
+
+	useEffect(() => {
+		if (session?.data?.user) {
+			const fetchUser = async () => {
+				try {
+					const response = await fetch(
+						`/api/user/info/${session?.data?.user.id}`
+					);
+					if (!response.ok) {
+						throw new Error("Failed to fetch user info");
+					}
+					// const data = await response.json();
+					// setUser(data);
+					// console.log("Fetched user:", data);
+				} catch (error) {
+					console.error("Error fetching user info:", error);
+				}
+			};
+
+			fetchUser();
+		}
+	}, [session]);
 
 	useEffect(() => {
 		if (!itemId) {
@@ -36,34 +63,15 @@ const Page = () => {
 				console.log("Fetched item:", data);
 			} catch (error) {
 				console.error("Error fetching items:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		const fetchReviews = async () => {
-			try {
-				const response = await fetch(`/api/review/item/${itemId}`);
-				if (!response.ok) {
-					throw new Error("Failed to fetch reviews");
-				}
-				const data = await response.json();
-				setItem((prevItem) => {
-					if (!prevItem) return undefined; // Ensure prevItem is defined
-					return {
-						...prevItem,
-						item_reviews: data, // Use the fetched data for reviews
-					};
-				});
-				console.log("Fetched reviews:", data);
-			} catch (error) {
-				console.error("Error fetching reviews:", error);
 			}
 		};
 
 		fetchItems();
-		fetchReviews();
 	}, [itemId]);
+
+	useEffect(() => {
+		if (item && user) setLoading(false);
+	}, [item, user]);
 
 	if (loading) return <div>Loading...</div>;
 
@@ -75,12 +83,14 @@ const Page = () => {
 			<main className="container mx-auto px-16 py-8">
 				<div className="flex gap-10 flex-col lg:flex-row">
 					<div className="flex flex-col w-full lg:w-1/3 gap-1">
-						{/* <img
-							src={image?.image_url || "/camera.png"}
-							alt={item?.name || "Product"}
-							className="rounded-lg mt-8 mb-4 shadow"
-						/> */}
-						<h3 className="text-xl font-semibold">{item?.name}</h3>
+						<img
+							className="rounded-t-lg aspect-square w-full object-cover"
+							src={`http://localhost:8787/${item.images[0]}`}
+							alt={item.item_name}
+						/>
+						<h3 className="text-xl font-semibold">
+							{item.item_name}
+						</h3>
 						<p className="text-sm text-gray-500">
 							รายละเอียดสินค้า : {item?.description}
 						</p>
@@ -92,7 +102,7 @@ const Page = () => {
 									Lender
 								</h3>
 								<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
-									{/* <p>ผู้ให้เช่า : {lender?.user_name}</p> */}
+									<p>ผู้ให้เช่า : {user.name}</p>
 									<p>
 										{/* ชื่อ-สกุล : {lender?.first_name}{" "} */}
 										{/* {lender?.last_name} */}

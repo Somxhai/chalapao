@@ -1,10 +1,9 @@
-import { assertEquals, assertExists } from "jsr:@std/assert";
+import { assertEquals } from "jsr:@std/assert";
 import { reviewApp } from "../handler/review.ts";
-import { createUser } from "./utils.ts";
+import { createTestItem, createUser } from "./utils.ts";
 import { Item } from "../type/app.ts";
 import { itemApp } from "../handler/item.ts";
 import { ReviewItem, ReviewUser } from "../type/review.ts";
-import { createReviewUser } from "../database/service/review.ts";
 
 Deno.test("Review routes", async (t) => {
   const { token, user, cookie } = await createUser();
@@ -18,48 +17,32 @@ Deno.test("Review routes", async (t) => {
     throw new Error("Lessor creation failed");
   }
 
-  const newItem: Item = {
-    owner_id: user.id,
-    price_per_day: 100,
-    description: "Test item for rental",
-    item_name: "Rental item",
-    penalty_terms: "Penalty",
-    rental_terms: "Rental",
-    item_status: "available",
-  };
   let item: Item;
 
   await t.step("Create Item", async () => {
-    const res = await itemApp.request("/", {
-      method: "POST",
-      headers: {
-        cookie: cookie,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newItem),
-    });
-
-    assertEquals(res.status, 200);
-    const created: Item = await res.json();
-    assertExists(created.id);
-    if (created) {
-      item = created;
-    }
+    item = await createTestItem(lessorUser.id, lessorCookie);
   });
 
   let createdReviewItem: ReviewItem;
 
   await t.step("POST /item/:target_id - create review for item", async () => {
+    const formData = new FormData();
+    formData.append("rating", "5");
+    formData.append("comment", "Great item!");
+    formData.append("type", "item");
+    const fakeImage = new File(
+      [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], // tiny fake PNG header
+      "test.png",
+      { type: "image/png" },
+    );
+
+    formData.append("files", fakeImage);
+
     const res = await reviewApp.request(`/item/${item.id}`, {
       method: "POST",
-      body: JSON.stringify({
-        rating: 5,
-        comment: "Great item!",
-        type: "item",
-      }),
+      body: formData,
       headers: {
         cookie,
-        "Content-Type": "application/json",
       },
     });
 
@@ -73,21 +56,28 @@ Deno.test("Review routes", async (t) => {
   let createdReviewUser: ReviewUser;
 
   await t.step("POST /user/:target_id - create review for user", async () => {
+    const formData = new FormData();
+    formData.append("rating", "4");
+    formData.append("comment", "Great user!");
+    formData.append("type", "user");
+    const fakeImage = new File(
+      [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], // tiny fake PNG header
+      "test.png",
+      { type: "image/png" },
+    );
+    formData.append("files", fakeImage);
+
     const res = await reviewApp.request(`/user/${lessorUser.id}`, {
       method: "POST",
-      body: JSON.stringify({
-        rating: 4,
-        comment: "Great user!",
-        type: "user",
-      }),
+      body: formData,
       headers: {
         cookie,
-        "Content-Type": "application/json",
       },
     });
 
     assertEquals(res.status, 200);
     createdReviewUser = await res.json();
+
     assertEquals(createdReviewUser.reviewer_id, user.id);
   });
 
@@ -95,6 +85,8 @@ Deno.test("Review routes", async (t) => {
     const res = await reviewApp.request(`/user/${lessorUser.id}`);
     assertEquals(res.status, 200);
     const reviews: ReviewUser[] = await res.json();
+    console.log("User review test: ", reviews);
+
     assertEquals(reviews[0].user_id, lessorUser.id);
   });
 
@@ -118,7 +110,8 @@ Deno.test("Review routes", async (t) => {
   await t.step("GET /item/:item_id - fetch reviews by item id", async () => {
     const res = await reviewApp.request(`/item/${item.id}`);
     assertEquals(res.status, 200);
-    const reviews: (ReviewItem & { images: string[] })[] = await res.json();
+    const reviews: (ReviewItem & { path: string[] })[] = await res.json();
+    console.log("Item review test: ", reviews);
     assertEquals(reviews.length, 1);
   });
 
@@ -163,7 +156,7 @@ Deno.test("Review routes", async (t) => {
     const res = await itemApp.request(`/${item.id}`, {
       method: "DELETE",
       headers: {
-        cookie,
+        cookie: lessorCookie,
         "Content-Type": "application/json",
       },
     });

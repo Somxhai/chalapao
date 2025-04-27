@@ -3,7 +3,7 @@ import { UUIDTypes } from "uuid";
 // Item Interface
 export interface Item {
   id?: UUIDTypes;
-  owner_id: string;
+  owner_id: UUIDTypes;
   item_name: string;
   description?: string;
   rental_terms: string;
@@ -11,6 +11,7 @@ export interface Item {
   item_status: "available" | "rented" | "unavailable";
   price_per_day: number;
   category_id?: UUIDTypes;
+  images?: string[];
   created_at?: Date;
   updated_at?: Date;
 }
@@ -86,4 +87,11 @@ export interface UserInfo {
   phone_number: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface FullItem extends Item {
+  images: string[]; // from item_image
+  keywords: string[]; // from keyword
+  category_name: string | null; // from category
+  user_info: UserInfo;
 }

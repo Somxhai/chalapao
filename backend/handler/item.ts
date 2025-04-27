@@ -1,25 +1,26 @@
 import { Hono } from "hono";
-import { parse as uuidparse } from "uuid";
+import { UUIDTypes } from "uuid";
 import {
-  createItem,
-  deleteItemById,
-  getItemById,
-  getItems,
-  getItemsByCategory,
-  getItemsByUserId,
-  updateItem,
+	createItem,
+	deleteItemById,
+	getItemById,
+	getItems,
+	getItemsByCategory,
+	getItemsByUserId,
+	updateItem,
 } from "../database/service/item.ts";
 import { auth } from "../lib/auth.ts";
 import { Item } from "../type/app.ts";
 import { HTTPException } from "hono/http-exception";
 import { tryCatchService } from "../lib/utils.ts";
 import { authMiddleware } from "../middleware.ts";
+import { deleteImages, saveImages } from "../lib/image.ts";
 
 export const itemApp = new Hono<{
-  Variables: {
-    user: typeof auth.$Infer.Session.user | null;
-    session: typeof auth.$Infer.Session.session | null;
-  };
+	Variables: {
+		user: typeof auth.$Infer.Session.user | null;
+		session: typeof auth.$Infer.Session.session | null;
+	};
 }>();
 
 /**
@@ -38,20 +39,27 @@ export const itemApp = new Hono<{
  * [{...item1}, {...item2}, ...]
  */
 itemApp.get("/:product_id?", async (c) => {
-  const id = c.req.param("product_id");
+	const id = c.req.param("product_id");
 
-  if (id) {
-    const item = await tryCatchService(() => getItemById(id));
-    return c.json(item);
-  }
+	if (id) {
+		const item = await tryCatchService(() => getItemById(id));
+		return c.json(item);
+	}
 
-  const offset = parseInt(c.req.query("offset") || "0");
-  const limit = parseInt(c.req.query("limit") || "30");
+	const offset = parseInt(c.req.query("offset") || "0");
+	const limit = parseInt(c.req.query("limit") || "30");
 
-  const items = await tryCatchService(
-    () => getItems(offset, limit),
-  );
-  return c.json(items);
+	let items = await tryCatchService(() => getItems(offset, limit));
+
+	items = items.map((item) => {
+		const images = item.images?.map((image) => `image/item/${image}`);
+		return {
+			...item,
+			images,
+		};
+	});
+
+	return c.json(items);
 });
 /**
  * Path: /category/:category_id
@@ -60,13 +68,13 @@ itemApp.get("/:product_id?", async (c) => {
  * Situation: User want to get items from specific category.
  */
 itemApp.get("/category/:category_id", async (c) => {
-  const id = c.req.param("category_id");
-  const offset = parseInt(c.req.query("offset") || "0");
-  const limit = parseInt(c.req.query("limit") || "30");
-  const items = await tryCatchService(
-    () => getItemsByCategory(id, offset, limit),
-  );
-  return c.json(items);
+	const id = c.req.param("category_id");
+	const offset = parseInt(c.req.query("offset") || "0");
+	const limit = parseInt(c.req.query("limit") || "30");
+	const items = await tryCatchService(() =>
+		getItemsByCategory(id, offset, limit)
+	);
+	return c.json(items);
 });
 
 /**
@@ -76,9 +84,9 @@ itemApp.get("/category/:category_id", async (c) => {
  * Situation: User want to get items from specific user (Lessor).
  */
 itemApp.get("/user/:user_id", async (c) => {
-  const user_id = c.req.param("user_id");
-  const items = await tryCatchService(() => getItemsByUserId(user_id));
-  return c.json(items);
+	const user_id = c.req.param("user_id");
+	const items = await tryCatchService(() => getItemsByUserId(user_id));
+	return c.json(items);
 });
 
 itemApp.use(authMiddleware);
@@ -90,15 +98,27 @@ itemApp.use(authMiddleware);
  * Situation: Lessor want to create a new item.
  */
 itemApp.post("/", async (c) => {
-  const item: Item = await c.req.json();
-  const user = c.get("user");
-  if (!user) {
-    throw new HTTPException(401, { message: "Unauthorized" });
-  }
-  const result = await tryCatchService(() => {
-    return createItem(item, user.id);
-  });
-  return c.json(result);
+	const body = await c.req.formData();
+	const item: Item = JSON.parse(body.get("item") as string);
+	const files = body.getAll("files") as File[];
+
+	const user = c.get("user");
+	if (!user) {
+		throw new HTTPException(401, { message: "Unauthorized" });
+	}
+	const result = await tryCatchService(() => {
+		return createItem(item, user.id);
+	});
+	let paths: string[] = [];
+
+	if (files) {
+		paths = await saveImages(files, result.id as UUIDTypes, "item_image");
+	}
+
+	return c.json({
+		...result,
+		paths,
+	});
 });
 /**
  * Path: /:product_id
@@ -108,21 +128,21 @@ itemApp.post("/", async (c) => {
  * Situation: Lessor want to update an item.
  */
 itemApp.put("/:product_id", async (c) => {
-  const id = c.req.param("product_id");
-  const item: Item = await c.req.json();
-  item.id = id;
-  const user = c.get("user");
-  if (!user) {
-    throw new HTTPException(401, { message: "Unauthorized" });
-  }
-  const result = await tryCatchService(() => {
-    if (item.owner_id !== user.id) {
-      throw new HTTPException(403, { message: "Unauthorized" });
-    }
+	const id = c.req.param("product_id");
+	const item: Item = await c.req.json();
+	item.id = id;
+	const user = c.get("user");
+	if (!user) {
+		throw new HTTPException(401, { message: "Unauthorized" });
+	}
+	const result = await tryCatchService(() => {
+		if (item.owner_id !== user.id) {
+			throw new HTTPException(403, { message: "Unauthorized" });
+		}
 
-    return updateItem(item, user.id);
-  });
-  return c.json(result);
+		return updateItem(item, user.id);
+	});
+	return c.json(result);
 });
 
 /**
@@ -132,16 +152,20 @@ itemApp.put("/:product_id", async (c) => {
  * Situation: Lessor want to delete an item.
  */
 itemApp.delete("/:product_id", async (c) => {
-  const id = c.req.param("product_id");
-  const user = c.get("user");
-  if (!user) {
-    throw new HTTPException(403, { message: "Unauthorized" });
-  }
+	const id = c.req.param("product_id");
+	const user = c.get("user");
+	if (!user) {
+		throw new HTTPException(403, { message: "Unauthorized" });
+	}
 
-  const user_id = uuidparse(user.id);
-
-  const result = await tryCatchService(() => deleteItemById(id, user_id));
-  return c.json(result);
+	await deleteImages(id, "item_image");
+	const result = await tryCatchService(() => deleteItemById(id, user.id));
+	return c.json(result);
 });
 
-// TODO: Add image to item
+itemApp.get("/all/", async (c) => {
+	const offset = parseInt(c.req.query("offset") || "0");
+	const limit = parseInt(c.req.query("limit") || "30");
+	const items = await tryCatchService(() => getItems(offset, limit));
+	return c.json(items);
+});

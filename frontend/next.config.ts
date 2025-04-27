@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
 	async rewrites() {
 		return [
 			{
-				source: "/api/:path*", // Proxy API requests
+				source: "/api/:path((?!auth).*)", // Proxy API requests except /auth
 				destination: "http://localhost:8787/:path*", // Backend server
 			},
 		];

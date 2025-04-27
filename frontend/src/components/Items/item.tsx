@@ -27,11 +27,11 @@ export default function ItemList({ item }: { item: ItemType }) {
 					{item.item_status}
 				</span>
 			</div>
-			{/* <img
+			<img
 				className="rounded-t-lg aspect-square w-full object-cover"
-				src={item.item_images[0]?.image_url}
-				alt={item.name}
-			/> */}
+				src={`http://localhost:8787/${item.images[0]}`}
+				alt={item.item_name}
+			/>
 			<h5 className="text-xl font-semibold tracking-tight dark:text-white line-clamp-2">
 				{item.item_name}
 			</h5>
