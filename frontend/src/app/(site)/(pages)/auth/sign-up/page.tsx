@@ -7,10 +7,10 @@ import { Button, Label, TextInput } from "flowbite-react";
 import { signUp } from "@/lib/auth-client";
 
 const SignUp = () => {
-	const [username, setUsername] = useState("student");
-	const [email, setEmail] = useState("student@gmail.com");
-	const [password, setPassword] = useState("student123");
-	const [confirmPassword, setConfirmPassword] = useState("student123");
+	const [username, setUsername] = useState("");
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
 	const [usernameError, setUsernameError] = useState("");
 	const [emailError, setEmailError] = useState("");
 	const [passwordError, setPasswordError] = useState("");
@@ -80,7 +80,7 @@ const SignUp = () => {
 						email,
 						password,
 						name: username,
-						callbackURL: "/sign-in",
+						callbackURL: "/auth/profile-info",
 					},
 					{
 						onRequest: (ctx) => {
@@ -88,7 +88,7 @@ const SignUp = () => {
 						},
 						onSuccess: (ctx) => {
 							console.log("Signup successful:", ctx.data);
-							window.location.href = "/sign-in";
+							window.location.href = "/auth/profile-info";
 						},
 						onError: (ctx) => {
 							console.error("Signup error:", ctx.error);
@@ -223,7 +223,7 @@ const SignUp = () => {
 									Sign Up
 								</Button>
 							</div>
-							<hr className="border-gray-300" />
+							{/* <hr className="border-gray-300" />
 							<div className="flex justify-center">
 								<button className="flex items-center justify-between w-full bg-blue-500 text-white p-2 rounded-lg">
 									<img
@@ -235,7 +235,7 @@ const SignUp = () => {
 										Sign in with Google
 									</span>
 								</button>
-							</div>
+							</div> */}
 						</form>
 					</div>
 				</div>

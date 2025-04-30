@@ -61,6 +61,13 @@ itemApp.get("/:product_id?", async (c) => {
 
 	return c.json(items);
 });
+
+itemApp.get("/all/items", async (c) => {
+	const offset = parseInt(c.req.query("offset") || "0");
+	const limit = parseInt(c.req.query("limit") || "30");
+	const items = await tryCatchService(() => getItems(offset, limit));
+	return c.json(items);
+});
 /**
  * Path: /category/:category_id
  * @param {UUIDTypes} category_id - The id of the category to get items from.
@@ -136,9 +143,9 @@ itemApp.put("/:product_id", async (c) => {
 		throw new HTTPException(401, { message: "Unauthorized" });
 	}
 	const result = await tryCatchService(() => {
-		if (item.owner_id !== user.id) {
-			throw new HTTPException(403, { message: "Unauthorized" });
-		}
+		// if (item.owner_id !== user.id) {
+		// 	throw new HTTPException(403, { message: "Unauthorized" });
+		// }
 
 		return updateItem(item, user.id);
 	});
@@ -161,11 +168,4 @@ itemApp.delete("/:product_id", async (c) => {
 	await deleteImages(id, "item_image");
 	const result = await tryCatchService(() => deleteItemById(id, user.id));
 	return c.json(result);
-});
-
-itemApp.get("/all/", async (c) => {
-	const offset = parseInt(c.req.query("offset") || "0");
-	const limit = parseInt(c.req.query("limit") || "30");
-	const items = await tryCatchService(() => getItems(offset, limit));
-	return c.json(items);
 });

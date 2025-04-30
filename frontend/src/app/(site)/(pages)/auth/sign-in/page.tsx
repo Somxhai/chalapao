@@ -7,8 +7,8 @@ import { Button, Label, TextInput } from "flowbite-react";
 import { signIn } from "@/lib/auth-client";
 
 const SignIn = () => {
-	const [email, setEmail] = useState("student@gmail.com");
-	const [password, setPassword] = useState("student123");
+	const [email, setEmail] = useState("john@example.com");
+	const [password, setPassword] = useState("123456789");
 	const [passwordError, setPasswordError] = useState("");
 	const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
@@ -128,7 +128,7 @@ const SignIn = () => {
 									Sign In
 								</Button>
 							</div>
-							<hr className=" border-gray-300" />
+							{/* <hr className=" border-gray-300" />
 							<div className="flex justify-center">
 								<button className="flex items-center justify-between w-full bg-blue-500 text-white py-2 px-4 rounded-lg">
 									<img
@@ -140,7 +140,7 @@ const SignIn = () => {
 										Sign in with Google
 									</span>
 								</button>
-							</div>
+							</div> */}
 						</form>
 					</div>
 				</div>

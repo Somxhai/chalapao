@@ -13,12 +13,12 @@ const Step = (step: number) => {
 						<a
 							href={
 								currentStep == 1
-									? `http://localhost:3000/rental/confirm/550e8400-e29b-41d4-a716-446655440000`
+									? `http://localhost:3000/rental/confirm/99999999-9999-4999-b999-999999999999`
 									: currentStep == 2
-									? `http://localhost:3000/rental/pending/1a2b3c4d-5e6f-7g8h-9i0j-1a2b3c4d5e6f`
+									? `http://localhost:3000/rental/pending/a70800b1-8422-46aa-9026-be4f2eac5b45`
 									: currentStep == 3
-									? `http://localhost:3000/rental/payment/1a2b3c4d-5e6f-7g8h-9i0j-1a2b3c4d5e6f`
-									: `http://localhost:3000/rental/success/1a2b3c4d-5e6f-7g8h-9i0j-1a2b3c4d5e6f`
+									? `http://localhost:3000/rental/payment/a70800b1-8422-46aa-9026-be4f2eac5b45`
+									: `http://localhost:3000/rental/success/a70800b1-8422-46aa-9026-be4f2eac5b45`
 							}
 							className={`w-6 h-6 leading-3 rounded-full flex items-center justify-center ${
 								currentStep <= step

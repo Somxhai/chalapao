@@ -16,9 +16,7 @@ const Page = () => {
 	useEffect(() => {
 		const fetchItems = async () => {
 			try {
-				const response = await fetch(
-					`/api/item/category/77777777-7777-4777-b777-777777777777?offset=0&limit=30`
-				);
+				const response = await fetch(`/api/item/all/items`);
 				const data = await response.json();
 				setItems(data);
 				console.log("Fetched categories:", data);
@@ -37,7 +35,7 @@ const Page = () => {
 			</Header>
 			<main className="container mx-auto px-16 py-8">
 				<div className="flex justify-between mb-6">
-					<h1 className="text-3xl font-bold">Popular Items</h1>
+					<h1 className="text-3xl font-bold">Items</h1>
 					<Sort />
 				</div>
 				<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">

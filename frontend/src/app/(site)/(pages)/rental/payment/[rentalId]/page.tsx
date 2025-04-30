@@ -7,30 +7,56 @@ import Step from "@/components/Rental/step";
 
 import Header from "@/components/Header";
 
-import { data as addresses } from "@/data/address";
-import { data as categories } from "@/data/category";
-import { data as items } from "@/data/item";
-import { data as itemImages } from "@/data/item_image";
-import { data as itemReviews } from "@/data/item_review";
-import { data as itemReviewImages } from "@/data/item_review_image";
-import { data as keywords } from "@/data/keyword";
-import { data as payments } from "@/data/payment";
-import { data as rentals } from "@/data/rental";
-import { data as users } from "@/data/user";
-import { data as userReviews } from "@/data/user_review";
+import { useSession } from "@/lib/auth-client";
 
 const Page = () => {
-	const params = useParams();
-	const rentalId = params?.rentalId?.toString();
-	const rental = rentals.find((r) => r.id === rentalId);
-	const item = items.find((i) => i.id === rental?.item_id);
-	const payment = payments.find((p) => p.id === rental?.payment_id);
-	const renter = users.find((u) => u.id === rental?.renter_id);
-	const lender = users.find((u) => u.id === item?.owner_id);
-	const image = item?.item_images?.[0];
-	const address = renter?.address.find((addr) => addr.is_primary);
-	const [selectedMethod, setSelectedMethod] = useState("ThaiQR");
-	const [phoneNumber, setPhoneNumber] = useState("");
+	const { rentalId } = useParams();
+	const session = useSession();
+
+	const [item, setItem] = useState<any>(null);
+	const [lender, setLender] = useState<any>(null);
+	const [renter, setRenter] = useState<any>(null);
+	const [loading, setLoading] = useState(true);
+	const [payment, setPayment] = useState<any>(null);
+	const [selectedMethod, setSelectedMethod] = useState<string>("ThaiQR");
+	const [phoneNumber, setPhoneNumber] = useState<string>("");
+
+	useEffect(() => {
+		const fetchRental = async () => {
+			try {
+				const rentalResponse = await fetch(`/api/rental/${rentalId}`);
+				const rentalData = await rentalResponse.json();
+				console.log("Fetched item:", rentalData);
+				setPayment(rentalData.payment);
+				const itemResponse = await fetch(
+					`/api/item/${rentalData.item_id}`
+				);
+				const itemData = await itemResponse.json();
+				setItem(itemData);
+
+				setLender(itemData.user_info);
+
+				if (session?.data?.user) {
+					const userResponse = await fetch(
+						`/api/user/info/${session?.data?.user.id}`
+					);
+					const userData = await userResponse.json();
+					setRenter(userData);
+				}
+			} catch (error) {
+				console.error("Error fetching rental data:", error);
+				notFound();
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		if (rentalId) {
+			fetchRental();
+		}
+	}, [rentalId, session]);
+
+	if (loading) return <div>Loading...</div>;
 
 	const paymentMethods = [
 		{
@@ -42,6 +68,32 @@ const Page = () => {
 		{ name: "PayPal", icon: "/icons/paypal.svg" },
 	];
 
+	const proceed = async () => {
+		console.log(
+			"Selected method:",
+			selectedMethod,
+			"Phone number:",
+			phoneNumber
+		);
+
+		try {
+			const updatedRental = await fetch(
+				`/api/rental/${rentalId}/status`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ status: "completed" }),
+				}
+			).then((res) => res.json());
+			window.location.href = `/rental/success/${rentalId}`;
+		} catch (error) {
+			console.error("Error cancelling rental:", error);
+			alert("Failed to cancel the rental request. Please try again.");
+		}
+	};
+
 	return (
 		<>
 			<Header>{Step(3)}</Header>
@@ -50,14 +102,12 @@ const Page = () => {
 					<h1 className="text-2xl font-semibold mb-6">Rental Fee</h1>
 					<div className="flex gap-2 items-start">
 						<img
-							src={image?.image_url || "/camera.png"}
-							alt={item?.name || "Product"}
-							width={64}
-							height={64}
-							className="rounded"
+							src={`http://localhost:8787/${item.images[0]}`}
+							alt={item?.name}
+							className="w-14 h-14 rounded-lg object-cover"
 						/>
 						<div>
-							<p className="font-semibold">{item?.name}</p>
+							<p className="font-semibold">{item?.item_name}</p>
 							<p className="text-xs text-gray-500">
 								ผู้เช่า : {renter?.first_name}{" "}
 								{renter?.last_name}
@@ -68,22 +118,10 @@ const Page = () => {
 							</p>
 						</div>
 					</div>
-					<div className="border-t mt-4 pt-4 space-y-1">
-						<div className="flex justify-between">
-							<span>ค่าเช่า 1 เดือน</span>
-							<span>
-								{item ? item.price_per_day * 30 : 0} บาท
-							</span>
-						</div>
-						<p className="text-xs text-gray-500 mt-2">
-							ทางจัดส่งแบบปกติ ไปที่ผู้เช่า:{" "}
-							{address?.residence_info || "ไม่พบที่อยู่"}
-						</p>
+					<div className="mt-4 space-y-1">
 						<div className="flex justify-between border-t pt-2 font-bold">
 							<span>รวม</span>
-							<span>
-								{payment?.total_price?.toFixed(2) || "0.00"} บาท
-							</span>
+							<span>{payment?.total_price} บาท</span>
 						</div>
 					</div>
 				</div>
@@ -224,7 +262,10 @@ const Page = () => {
 					</div>
 				</div>
 				<div className="text-center">
-					<button className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90">
+					<button
+						onClick={proceed}
+						className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90"
+					>
 						Proceed
 					</button>
 				</div>

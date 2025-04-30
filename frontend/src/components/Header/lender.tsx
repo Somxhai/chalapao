@@ -2,7 +2,6 @@
 
 import { Navbar, NavbarBrand } from "flowbite-react";
 
-import Brand from "./brand";
 import {
 	Dropdown,
 	DropdownDivider,
@@ -11,28 +10,56 @@ import {
 	NavbarToggle,
 } from "flowbite-react";
 
-import { data as addresses } from "@/data/address";
-import { data as categories } from "@/data/category";
-import { data as items } from "@/data/item";
-import { data as itemImages } from "@/data/item_image";
-import { data as itemReviews } from "@/data/item_review";
-import { data as itemReviewImages } from "@/data/item_review_image";
-import { data as keywords } from "@/data/keyword";
-import { data as payments } from "@/data/payment";
-import { data as rentals } from "@/data/rental";
-import { data as users } from "@/data/user";
-import { data as userReviews } from "@/data/user_review";
+import { ReactNode, useEffect, useState } from "react";
 
-import { ReactNode } from "react";
+import { signOut } from "@/lib/auth-client";
+
+import { useSession } from "@/lib/auth-client";
 
 interface HeaderProps {
 	children: ReactNode;
 }
 
 const Header = ({ children }: HeaderProps) => {
+	const session = useSession();
+	interface User {
+		first_name: string;
+		last_name: string;
+		// Add other properties if needed
+	}
+
+	const [user, setUser] = useState<User | null>(null);
+
+	useEffect(() => {
+		if (session?.data?.user) {
+			const fetchUser = async () => {
+				try {
+					const response = await fetch(
+						`/api/user/info/${session?.data?.user.id}`
+					);
+					if (!response.ok) {
+						throw new Error("Failed to fetch user info");
+					}
+					const data = await response.json();
+					setUser(data);
+					console.log("Fetched user:", data);
+				} catch (error) {
+					console.error("Error fetching user info:", error);
+				}
+			};
+
+			fetchUser();
+		}
+	}, [session]);
+
+	const signOutBtn = () => {
+		signOut();
+		window.location.href = "/auth/sign-in";
+	};
+
 	return (
 		<Navbar>
-			<div className="px-2 py-2.5 sm:px-4 rounded-lg border w-full flex justify-between">
+			<div className="px-2 py-2.5 sm:px-4 rounded-lg border w-full flex justify-between items-center">
 				<NavbarBrand href="/">
 					<svg
 						width="33"
@@ -83,16 +110,16 @@ const Header = ({ children }: HeaderProps) => {
 							fill="currentColor"
 						/>
 					</svg>
+					<div className="flex justify-start items-end w-full ms-2">
+						<h1 className="text-3xl text-gray-800">
+							<span className="font-black">Chalapao</span> Lender
+							Center
+						</h1>
+					</div>
 				</NavbarBrand>
-				<div className="flex justify-start items-end w-full ms-4">
-					<h1 className="text-3xl text-gray-800">
-						<span className="font-black">Chalapao</span> Lender
-						Center
-					</h1>
-				</div>
 				<div className="flex md:order-2 gap-6 md:gap-8 items-center justify-end">
-					<button
-						type="button"
+					<a
+						href="/lender/items"
 						className="inline-flex items-center rounded-lg p-2 text-gray-500
                                     hover:bg-gray-100 focus:outline-none focus:ring-2
                                     focus:ring-gray-200 dark:text-gray-400
@@ -115,9 +142,9 @@ const Header = ({ children }: HeaderProps) => {
 								fill="#545454"
 							/>
 						</svg>
-					</button>
-					<button
-						type="button"
+					</a>
+					<a
+						href="/lender/rentals"
 						className="inline-flex items-center rounded-lg p-2 text-gray-500
                                     hover:bg-gray-100 focus:outline-none focus:ring-2
                                     focus:ring-gray-200 dark:text-gray-400
@@ -148,7 +175,7 @@ const Header = ({ children }: HeaderProps) => {
 								fill="currentColor"
 							/>
 						</svg>
-					</button>
+					</a>
 					<Dropdown
 						arrowIcon={false}
 						inline
@@ -181,15 +208,13 @@ const Header = ({ children }: HeaderProps) => {
 					>
 						<DropdownHeader>
 							<span className="block text-sm">
-								{users[0].first_name} {users[0].last_name}
-							</span>
-							<span className="block truncate text-sm font-medium">
-								{users[0].email}
+								{user?.first_name} {user?.last_name}
 							</span>
 						</DropdownHeader>
-						<DropdownItem>Profile</DropdownItem>
 						<DropdownDivider />
-						<DropdownItem>Sign Out</DropdownItem>
+						<DropdownItem onClick={() => signOutBtn()}>
+							Sign Out
+						</DropdownItem>
 						{/* <DropdownItem>Sign In</DropdownItem>
                                     <DropdownItem>Sign Up</DropdownItem> */}
 					</Dropdown>

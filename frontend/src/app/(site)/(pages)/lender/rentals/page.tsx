@@ -1,16 +1,13 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Tabs, TabItem, Card, Button } from "flowbite-react";
-import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 
-import { data as rentals } from "@/data/rental";
-import { data as items } from "@/data/item";
-import { data as payments } from "@/data/payment";
-import { data as users } from "@/data/user";
-import { data as itemImages } from "@/data/item_image";
+import { useSession } from "@/lib/auth-client";
 
 type RentalItem = {
+	description: string;
 	id: string;
 	name: string;
 	store: string;
@@ -20,43 +17,38 @@ type RentalItem = {
 	actions?: { label: string; href?: string; onClick?: () => void }[];
 };
 
-const toThaiStatus = (rentalStatus: string, paymentStatus?: string): string => {
+const mapStatus = (rentalStatus: string, paymentStatus?: string): string => {
 	switch (rentalStatus) {
-		case "Pending":
-			return "ขอเช่า";
-		case "Active": {
-			if (paymentStatus === "Pending") return "ยืนยันคำขอแล้ว";
-			if (paymentStatus === "Paid") return "ชำระเงินแล้ว";
-			return "ถูกเช่าอยู่";
+		case "pending":
+			return "Request Pending";
+		case "accepted": {
+			if (paymentStatus === "Pending") return "Request Approved";
+			if (paymentStatus === "Paid") return "Paid";
+			return "Currently Rented";
 		}
-		case "Returned":
-			return "กำลังส่งคืน";
-		case "Failed":
-			return "ยกเลิก";
+		case "completed":
+			return "Completed";
+		case "cancel":
+			return "Cancelled";
 		default:
-			return "สำเร็จแล้ว";
+			return "Unknown Status";
 	}
 };
 
-const toActions = (status: string, id: string) => {
+const mapActions = (status: string, id: string) => {
 	switch (status) {
-		case "ขอเช่า":
-			return [
-				{ label: "ยืนยันคำขอ", href: `/approve/${id}` },
-				{ label: "ปฏิเสธคำขอ", href: `/reject/${id}` },
-			];
-		case "ยืนยันคำขอแล้ว":
-			return [{ label: "รอผู้เช่าชำระเงิน" }];
-		case "ชำระเงินแล้ว":
-			return [{ label: "ยืนยันการส่ง", href: `/confirm-shipping/${id}` }];
-		case "กำลังส่งคืน":
-			return [
-				{ label: "ยืนยันการส่งคืน", href: `/confirm-return/${id}` },
-				{ label: "ระบุค่าปรับ", href: `/penalty/${id}` },
-			];
-		case "ผู้เช่าชำระค่าปรับแล้ว":
-		case "สำเร็จแล้ว":
-			return [{ label: "ให้คะแนนผู้เช่า", href: `/rate-renter/${id}` }];
+		case "Request Pending":
+			return [{ label: "Accept/Reject", href: `/lender/rental/${id}` }];
+		case "Request Approved":
+			return [{ label: "Waiting for Payment" }];
+		case "Paid":
+			return [{ label: "View Details", href: `/lender/rental/${id}` }];
+		case "Currently Rented":
+			return [{ label: "View Details", href: `/lender/rental/${id}` }];
+		case "Completed":
+			return [{ label: "View Details", href: `/lender/rental/${id}` }];
+		case "Cancelled":
+			return [{ label: "View Details", href: `/lender/rental/${id}` }];
 		default:
 			return [];
 	}
@@ -64,34 +56,12 @@ const toActions = (status: string, id: string) => {
 
 const statusGroups: Record<string, (s: string) => boolean> = {
 	all: () => true,
-	request: (s) => s === "ขอเช่า",
+	request: (s) => s === "Request Pending",
 	current: (s) =>
-		["ยืนยันคำขอแล้ว", "ชำระเงินแล้ว", "ถูกเช่าอยู่"].includes(s),
-	returning: (s) => s === "กำลังส่งคืน",
-	completed: (s) => ["ผู้เช่าชำระค่าปรับแล้ว", "สำเร็จแล้ว"].includes(s),
-	cancelled: (s) => s === "ยกเลิก",
+		["Request Approved", "Paid", "Currently Rented"].includes(s),
+	completed: (s) => s === "Completed",
+	cancelled: (s) => s === "Cancelled",
 };
-
-const rentalsData: RentalItem[] = rentals.map((r) => {
-	const item = items.find((i) => i.id === r.item_id);
-	const payment = payments.find((p) => p.id === r.payment_id);
-	const owner = users.find((u) => u.id === item?.owner_id);
-	const status = toThaiStatus(r.status, payment?.status);
-	const price = payment?.total_price ?? item?.price_per_day ?? 0;
-	const image =
-		item?.item_images?.[0]?.image_url ||
-		itemImages.find((img) => img.item_id === item?.id)?.image_url ||
-		"";
-	return {
-		id: r.id,
-		name: item?.name || "ชื่อสินค้า",
-		store: owner?.user_name || "ชื่อร้าน",
-		price,
-		status,
-		image,
-		actions: toActions(status, r.id),
-	};
-});
 
 const RentalCard = ({ rental }: { rental: RentalItem }) => (
 	<Card className="mb-4">
@@ -104,43 +74,17 @@ const RentalCard = ({ rental }: { rental: RentalItem }) => (
 						className="w-full h-full object-cover"
 					/>
 				) : (
-					<svg
-						className="text-gray-400 text-3xl"
-						stroke="currentColor"
-						fill="none"
-						strokeWidth="2"
-						viewBox="0 0 24 24"
-						aria-hidden="true"
-						height="200px"
-						width="200px"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-						></path>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-						></path>
-					</svg>
+					<div className="text-gray-400 text-3xl">No Image</div>
 				)}
 			</div>
 			<div className="flex-1">
 				<h5 className="text-lg font-semibold">{rental.name}</h5>
-				<Link
-					href={`/lender/rental/${rental.id}`}
-					className="text-sm underline text-gray-500 hover:text-black"
-				>
-					ดูรายละเอียด
-				</Link>
+				<p className="text-sm text-gray-600">{rental.description}</p>
 			</div>
 			<div className="flex flex-col justify-between text-right items-end gap-1">
 				<span className="text-sm text-gray-600">{rental.status}</span>
 				<span className="text-lg font-bold">
-					{rental.price.toLocaleString()} บาท
+					{rental.price.toLocaleString()} THB
 				</span>
 				<div className="flex flex-wrap gap-1 justify-end">
 					{rental.actions?.map((action, i) =>
@@ -151,12 +95,7 @@ const RentalCard = ({ rental }: { rental: RentalItem }) => (
 								</Button>
 							</Link>
 						) : (
-							<Button
-								key={i}
-								size="xs"
-								color="gray"
-								onClick={action.onClick}
-							>
+							<Button key={i} size="xs" color="gray" disabled>
 								{action.label}
 							</Button>
 						)
@@ -180,7 +119,7 @@ const ScrollableRentalList = ({
 		<div className="mb-4">
 			<input
 				type="text"
-				placeholder="ค้นหา..."
+				placeholder="Search..."
 				value={search}
 				onChange={(e) => setSearch(e.target.value)}
 				className="border border-gray-300 rounded-lg p-2 w-[30%]"
@@ -191,7 +130,7 @@ const ScrollableRentalList = ({
 				rentals.map((r) => <RentalCard key={r.id} rental={r} />)
 			) : (
 				<div className="flex items-center justify-center h-full">
-					<p className="text-gray-500 text-lg">ไม่มีรายการ</p>
+					<p className="text-gray-500 text-lg">No records found</p>
 				</div>
 			)}
 		</div>
@@ -199,11 +138,54 @@ const ScrollableRentalList = ({
 );
 
 const Page = () => {
+	const [rentalsData, setRentalsData] = useState<RentalItem[]>([]);
 	const [search, setSearch] = useState("");
+
+	const session = useSession();
+
+	useEffect(() => {
+		const fetchRentals = async () => {
+			if (!session?.data?.user.id) return;
+			try {
+				const res = await fetch(
+					`/api/rental/user/lessor/${session.data.user.id}`
+				);
+				const data = await res.json();
+				console.log("Fetched rentals:", data);
+
+				const rentals = data.map((r: any) => {
+					const status = mapStatus(r.status, r.payment?.status);
+					return {
+						id: r.id,
+						name: r.item?.item_name || "Unnamed Product",
+						description: r.item?.description || "No description",
+						store: r.lessor_info?.first_name || "Unknown Store",
+						price:
+							r.payment?.total_price ??
+							r.item?.price_per_day ??
+							0,
+						status,
+						image: r.item?.images?.[0]
+							? `http://localhost:8787/${r.item.images[0]}`
+							: "",
+						actions: mapActions(status, r.id),
+					};
+				});
+
+				setRentalsData(rentals);
+			} catch (error) {
+				console.error("Failed to fetch rentals", error);
+			}
+		};
+
+		fetchRentals();
+	}, [session]);
+
 	const filteredByTab = (predicate: (s: string) => boolean) =>
 		rentalsData
 			.filter((r) => predicate(r.status))
 			.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
+
 	return (
 		<>
 			<h1 className="text-2xl font-bold mb-4">Rental Management</h1>
@@ -225,13 +207,6 @@ const Page = () => {
 				<TabItem title="Currently Rented">
 					<ScrollableRentalList
 						rentals={filteredByTab(statusGroups.current)}
-						search={search}
-						setSearch={setSearch}
-					/>
-				</TabItem>
-				<TabItem title="Being Returned">
-					<ScrollableRentalList
-						rentals={filteredByTab(statusGroups.returning)}
 						search={search}
 						setSearch={setSearch}
 					/>

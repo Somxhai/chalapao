@@ -14,15 +14,12 @@ const Page = () => {
 
 	const session = useSession();
 
-	// const item = items.find((i) => i.id === itemId);
-	// const lender = users.find((u) => u.id === item?.owner_id);
-	// const renter = users.find((u) => u.user_type === "renter");
-	// const image = itemImages.find((img) => img.item_id === item?.id);
-	// const address = renter?.address.find((addr) => addr.is_primary);
-
-	const [item, setItem] = useState<ItemType>();
+	const [item, setItem] = useState<any>();
 	const [loading, setLoading] = useState(true);
 	const [user, setUser] = useState<any>(null);
+	const [startDate, setStartDate] = useState<Date>();
+	const [endDate, setEndDate] = useState<Date>();
+	const [total, setTotal] = useState<any>(0);
 
 	useEffect(() => {
 		if (session?.data?.user) {
@@ -34,9 +31,9 @@ const Page = () => {
 					if (!response.ok) {
 						throw new Error("Failed to fetch user info");
 					}
-					// const data = await response.json();
-					// setUser(data);
-					// console.log("Fetched user:", data);
+					const data = await response.json();
+					setUser(data);
+					console.log("Fetched user:", data);
 				} catch (error) {
 					console.error("Error fetching user info:", error);
 				}
@@ -46,12 +43,16 @@ const Page = () => {
 		}
 	}, [session]);
 
-	useEffect(() => {
-		if (!itemId) {
-			console.error("Item ID is missing");
-			return;
-		}
+	const formatThaiDate = (d: string) =>
+		new Date(d).toLocaleString("th-TH", {
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
 
+	useEffect(() => {
 		const fetchItems = async () => {
 			try {
 				const response = await fetch(`/api/item/${itemId}`);
@@ -61,10 +62,32 @@ const Page = () => {
 				const data = await response.json();
 				setItem(data);
 				console.log("Fetched item:", data);
+				if (startDateParam && endDateParam) {
+					const startDate = new Date(startDateParam);
+					const endDate = new Date(endDateParam);
+					const totalPrice = (
+						(data?.price_per_day *
+							(endDate.getTime() - startDate.getTime())) /
+						(1000 * 3600 * 24)
+					).toFixed(2);
+					setTotal(totalPrice);
+				}
 			} catch (error) {
 				console.error("Error fetching items:", error);
 			}
 		};
+
+		const queryParams = new URLSearchParams(window.location.search);
+		const startDateParam = queryParams.get("startDate");
+		const endDateParam = queryParams.get("endDate");
+
+		if (startDateParam) {
+			setStartDate(new Date(startDateParam));
+		}
+
+		if (endDateParam) {
+			setEndDate(new Date(endDateParam));
+		}
 
 		fetchItems();
 	}, [itemId]);
@@ -75,21 +98,90 @@ const Page = () => {
 
 	if (loading) return <div>Loading...</div>;
 
-	if (!item) return notFound();
+	const createRental = async () => {
+		const termsCheckbox = document.getElementById(
+			"terms"
+		) as HTMLInputElement;
+		const conditionCheckbox = document.getElementById(
+			"condition"
+		) as HTMLInputElement;
+
+		if (!termsCheckbox.checked || !conditionCheckbox.checked) {
+			alert("กรุณายอมรับเงื่อนไขและข้อตกลงก่อนส่งคำขอเช่า");
+			return;
+		}
+
+		if (!item || !user || !startDate || !endDate) {
+			alert("ข้อมูลไม่ครบ กรุณาเลือกวันที่ และตรวจสอบข้อมูลอีกครั้ง");
+			return;
+		}
+
+		try {
+			const rental = {
+				item_id: item.id,
+				renter_id: user.user_id,
+				status: "pending",
+				start_date: startDate,
+				end_date: endDate,
+			};
+
+			const delivery_address = {
+				residence_info: user.residence_info,
+				sub_district: user.sub_district,
+				district: user.district,
+				province: user.province,
+				postal_code: user.postal_code,
+				type: "delivery", // ต้องมี type ตาม backend ต้องการ
+			};
+
+			const return_address = {
+				residence_info:
+					item.user_info.addresses[0]?.residence_info || "",
+				sub_district: item.user_info.addresses[0]?.sub_district || "",
+				district: item.user_info.addresses[0]?.district || "",
+				province: item.user_info.addresses[0]?.province || "",
+				postal_code: item.user_info.addresses[0]?.postal_code || "",
+				type: "return",
+			};
+
+			const response = await fetch("/api/rental", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					rental,
+					delivery_address,
+					return_address,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to create rental");
+			}
+
+			const data = await response.json();
+			console.log("Rental created:", data);
+			window.location.href = `/rental/pending/${data.id}`;
+		} catch (error) {
+			console.error("Error creating rental:", error);
+			alert("ไม่สามารถส่งคำขอเช่าได้ กรุณาลองใหม่อีกครั้ง");
+		}
+	};
 
 	return (
 		<>
 			<Header>{Step(1)}</Header>
 			<main className="container mx-auto px-16 py-8">
 				<div className="flex gap-10 flex-col lg:flex-row">
-					<div className="flex flex-col w-full lg:w-1/3 gap-1">
+					<div className="flex flex-col w-full lg:w-1/3 gap-2 mt-8">
 						<img
 							className="rounded-t-lg aspect-square w-full object-cover"
-							src={`http://localhost:8787/${item.images[0]}`}
-							alt={item.item_name}
+							src={`http://localhost:8787/${item?.images[0]}`}
+							alt={item?.item_name}
 						/>
 						<h3 className="text-xl font-semibold">
-							{item.item_name}
+							{item?.item_name}
 						</h3>
 						<p className="text-sm text-gray-500">
 							รายละเอียดสินค้า : {item?.description}
@@ -102,10 +194,28 @@ const Page = () => {
 									Lender
 								</h3>
 								<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
-									<p>ผู้ให้เช่า : {user.name}</p>
 									<p>
-										{/* ชื่อ-สกุล : {lender?.first_name}{" "} */}
-										{/* {lender?.last_name} */}
+										ชื่อ-สกุล : {item?.user_info.first_name}{" "}
+										{item?.user_info.last_name}
+									</p>
+									<p>
+										ที่อยู่จัดส่ง :{" "}
+										{
+											item?.user_info.addresses[0]
+												.residence_info
+										}
+										,{" "}
+										{
+											item?.user_info.addresses[0]
+												.sub_district
+										}
+										,{" "}
+										{item?.user_info.addresses[0].district},{" "}
+										{item?.user_info.addresses[0].province},{" "}
+										{
+											item?.user_info.addresses[0]
+												.postal_code
+										}
 									</p>
 								</div>
 							</div>
@@ -117,14 +227,14 @@ const Page = () => {
 									</span>
 								</h3>
 								<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
-									{/* <p>ผู้เช่า : {renter?.user_name}</p> */}
 									<p>
-										{/* ชื่อ-สกุล : {renter?.first_name}{" "} */}
-										{/* {renter?.last_name} */}
+										ชื่อ-สกุล : {user?.first_name}{" "}
+										{user?.last_name}
 									</p>
 									<p>
-										ที่อยู่จัดส่ง :{" "}
-										{/* {address?.residence_info || "ที่อยู่"} */}
+										ที่อยู่จัดส่ง : {user?.residence_info},{" "}
+										{user?.sub_district}, {user?.district},{" "}
+										{user?.province}, {user?.postal_code}
 									</p>
 								</div>
 							</div>
@@ -132,8 +242,18 @@ const Page = () => {
 						<div className="flex flex-col w-full gap-1">
 							<h3 className="text-xl font-semibold">Renting</h3>
 							<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
-								<p>ตั้งแต่วันที่ : 22 มีนาคม 2568</p>
-								<p>ถึงวันที่ : 22 เมษายน 2568</p>
+								<p>
+									ตั้งแต่วันที่ :{" "}
+									{formatThaiDate(
+										startDate?.toISOString() || ""
+									)}
+								</p>
+								<p>
+									ถึงวันที่ :{" "}
+									{formatThaiDate(
+										endDate?.toISOString() || ""
+									)}
+								</p>
 								<p>
 									เงื่อนไขและข้อตกลงการเช่า :{" "}
 									{item?.rental_terms}
@@ -142,59 +262,39 @@ const Page = () => {
 									เงื่อนไขและข้อตกลงการปรับ :{" "}
 									{item?.penalty_terms}
 								</p>
-							</div>
-						</div>
-						<div className="flex flex-col w-full gap-1">
-							<h3 className="text-xl font-semibold">
-								Rental Fee
-							</h3>
-							<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
-								<div className="flex items-center gap-2">
-									{/* <img
-										src={image?.image_url || "/camera.png"}
-										alt={item?.name || "Thumb"}
-										width={60}
-										height={60}
-										className="rounded"
-									/> */}
-									<p>{item?.name}</p>
-									<p className="text-xs text-gray-500">
-										{/* ผู้ให้เช่า : {lender?.first_name}{" "} */}
-										{/* {lender?.last_name} */}
-									</p>
-								</div>
-								<div className="text-xs text-gray-500">
-									ไปที่ผู้เช่า :{" "}
-									{/* {address?.residence_info || "ที่อยู่"} */}
-								</div>
 								<div className="flex justify-between font-bold border-t pt-2">
 									<span>รวม</span>
-									<span>{item?.price_per_day} บาท</span>
+									<span>{total} บาท</span>
 								</div>
 								<div className="mt-4 space-y-2 text-sm">
 									<div>
 										<input
+											id="terms"
 											type="checkbox"
 											className="mr-2"
 										/>
-										<span>
+										<label htmlFor="terms">
 											ยอมรับเงื่อนไขและข้อตกลงในการเช่า
-										</span>
+										</label>
 									</div>
 									<div>
 										<input
+											id="condition"
 											type="checkbox"
 											className="mr-2"
 										/>
-										<span>
+										<label htmlFor="condition">
 											ยอมรับเงื่อนไขและข้อตกลงในการปรับ
-										</span>
+										</label>
 									</div>
 								</div>
 							</div>
 						</div>
 						<div className="flex justify-end">
-							<button className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90">
+							<button
+								onClick={createRental}
+								className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90"
+							>
 								Submit Request
 							</button>
 						</div>

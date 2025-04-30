@@ -1,28 +1,20 @@
 "use client";
-import { useState, useMemo } from "react";
+
+import {
+	useState,
+	useEffect,
+	JSXElementConstructor,
+	Key,
+	MouseEventHandler,
+	ReactElement,
+	ReactNode,
+	ReactPortal,
+} from "react";
 import { Tabs, TabItem, Card, Button } from "flowbite-react";
 import Link from "next/link";
 
-import { data as addresses } from "@/data/address";
-import { data as categories } from "@/data/category";
-import { data as items } from "@/data/item";
-import { data as rentals } from "@/data/rental";
-import { data as payments } from "@/data/payment";
-import { data as users } from "@/data/user";
-
-type RentalItem = {
-	id: string;
-	name: string;
-	store: string;
-	startDate: string;
-	endDate: string;
-	duration: string;
-	price: number;
-	status: string;
-	image: string;
-	rating?: number;
-	actions: { label: string; href?: string; onClick?: () => void }[];
-};
+import { useSession } from "@/lib/auth-client";
+import { UrlObject } from "url";
 
 const getDuration = (start: string, end: string): string => {
 	if (!start || !end) return "-";
@@ -35,36 +27,23 @@ const getDuration = (start: string, end: string): string => {
 };
 
 const mapStatus = (rentalStatus: string, paymentStatus?: string): string => {
-	if (rentalStatus === "Pending") return "รอผู้ปล่อยเช่ายืนยัน";
-	if (rentalStatus === "Active") return "เช่าอยู่";
-	if (paymentStatus === "Pending") return "ผู้ปล่อยเช่ายืนยันแล้ว";
-	if (paymentStatus === "Failed") return "มีค่าปรับที่ต้องชำระ";
-	if (rentalStatus === "Failed") return "ยกเลิกแล้ว";
-	return "เช่าสำเร็จแล้ว";
+	if (rentalStatus === "pending") return "รอผู้ปล่อยเช่ายืนยัน";
+	if (rentalStatus === "accepted" && paymentStatus === "pending")
+		return "ผู้ปล่อยเช่ายืนยันแล้ว";
+	if (rentalStatus === "accepted" && paymentStatus === "completed")
+		return "เช่าอยู่";
+	if (rentalStatus === "cancel") return "ยกเลิกแล้ว";
+	if (rentalStatus === "completed") return "เช่าสำเร็จแล้ว";
+	if (paymentStatus === "failed") return "มีค่าปรับที่ต้องชำระ";
+	return "ไม่ทราบสถานะ";
 };
 
 const mapActions = (status: string, id: string, rating?: number) => {
 	switch (status) {
 		case "รอผู้ปล่อยเช่ายืนยัน":
-			return [{ label: "ยกเลิก", href: `/cancel/${id}` }];
+			return [{ label: "ยกเลิก", href: `/rental/confirm/${id}` }];
 		case "ผู้ปล่อยเช่ายืนยันแล้ว":
-			return [
-				{ label: "ชำระเงิน", href: `/payment/${id}` },
-				{ label: "ยกเลิก", href: `/cancel/${id}` },
-			];
-		case "เช่าอยู่":
-			return [
-				{ label: "ยืนยันการส่งคืน", href: `/return/${id}` },
-				{ label: "ยกเลิก", href: `/cancel/${id}` },
-			];
-		case "จัดส่งคืนแล้ว":
-			return [{ label: "รอผู้ให้เช่ายืนยัน" }];
-		case "เช่าสำเร็จแล้ว":
-			return rating && rating > 0
-				? [{ label: "เช่าซ้ำ", href: `/rental/${id}` }]
-				: [{ label: "ให้คะแนน", href: `/rate/${id}` }];
-		case "มีค่าปรับที่ต้องชำระ":
-			return [{ label: "ชำระค่าปรับ", href: `/penalty/${id}` }];
+			return [{ label: "ชำระเงิน", href: `/rental/payment/${id}` }];
 		default:
 			return [];
 	}
@@ -80,71 +59,21 @@ const statusGroups = {
 	penalty: (s: string) => s === "มีค่าปรับที่ต้องชำระ",
 };
 
-const rentalsData: RentalItem[] = rentals.map((r) => {
-	const item = items.find((i) => i.id === r.item_id);
-	const payment = payments.find((p) => p.id === r.payment_id);
-	const owner = users.find((u) => u.id === item?.owner_id);
-
-	const status = mapStatus(r.status, payment?.status);
-	const rating = 0;
-
-	return {
-		id: r.id,
-		name: item?.name || "ชื่อสินค้า",
-		store: owner?.user_name || "ชื่อร้าน",
-		startDate: r.start_date ?? "-",
-		endDate: r.end_date ?? "-",
-		duration: getDuration(r.start_date, r.end_date),
-		price: payment?.total_price ?? item?.price_per_day ?? 0,
-		status,
-		image: item?.item_images?.[0]?.image_url ?? "",
-		rating,
-		actions: mapActions(status, r.id, rating),
-	};
-});
-
-const RentalCard = ({ rental }: { rental: RentalItem }) => (
+const RentalCard = ({ rental }: { rental: any }) => (
 	<Card className="mb-4">
 		<div className="flex gap-4">
 			<div className="w-24 h-24 flex items-center justify-center">
-				{rental.image ? (
-					<img
-						src={rental.image}
-						alt={rental.name}
-						className="w-full h-full object-cover"
-					/>
-				) : (
-					<svg
-						className="text-gray-400 text-3xl"
-						stroke="currentColor"
-						fill="none"
-						strokeWidth="2"
-						viewBox="0 0 24 24"
-						aria-hidden="true"
-						height="200px"
-						width="200px"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-						></path>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-						></path>
-					</svg>
-				)}
+				<img
+					className="rounded-t-lg aspect-square w-full object-cover"
+					src={`http://localhost:8787/${rental?.image}`}
+					alt={rental?.sname}
+				/>
 			</div>
-
 			<div className="flex-1">
 				<h5 className="text-lg font-semibold">{rental.name}</h5>
 				<p className="text-sm">ตั้งแต่: {rental.startDate}</p>
 				<p className="text-sm">ถึง: {rental.endDate}</p>
 				<p className="text-sm">ระยะเวลา: {rental.duration}</p>
-
 				<Link
 					href={`/rental/${rental.id}`}
 					className="text-sm underline text-gray-500 hover:text-black"
@@ -152,30 +81,65 @@ const RentalCard = ({ rental }: { rental: RentalItem }) => (
 					ดูรายละเอียด
 				</Link>
 			</div>
-
-			<div className="flex flex-col justify-between text-right items-end gap-1">
+			<div className="flex flex-col justify-between items-end gap-1">
 				<span className="text-sm text-gray-600">{rental.status}</span>
 				<span className="text-lg font-bold">
 					{rental.price.toLocaleString()} บาท
 				</span>
 				<div className="flex flex-wrap gap-1 justify-end">
-					{rental.actions.map((action, i) =>
-						action.href ? (
-							<Link key={i} href={action.href}>
-								<Button size="xs" color="gray">
+					{rental.actions.map(
+						(
+							action: {
+								href: string | UrlObject;
+								label:
+									| string
+									| number
+									| bigint
+									| boolean
+									| ReactElement<
+											unknown,
+											string | JSXElementConstructor<any>
+									  >
+									| Iterable<ReactNode>
+									| Promise<
+											| string
+											| number
+											| bigint
+											| boolean
+											| ReactPortal
+											| ReactElement<
+													unknown,
+													| string
+													| JSXElementConstructor<any>
+											  >
+											| Iterable<ReactNode>
+											| null
+											| undefined
+									  >
+									| null
+									| undefined;
+								onClick:
+									| MouseEventHandler<HTMLButtonElement>
+									| undefined;
+							},
+							i: Key | null | undefined
+						) =>
+							action.href ? (
+								<Link key={i} href={action.href}>
+									<Button size="xs" color="gray">
+										{action.label}
+									</Button>
+								</Link>
+							) : (
+								<Button
+									key={i}
+									size="xs"
+									color="gray"
+									onClick={action.onClick}
+								>
 									{action.label}
 								</Button>
-							</Link>
-						) : (
-							<Button
-								key={i}
-								size="xs"
-								color="gray"
-								onClick={action.onClick}
-							>
-								{action.label}
-							</Button>
-						)
+							)
 					)}
 				</div>
 			</div>
@@ -188,12 +152,12 @@ const ScrollableRentalList = ({
 	search,
 	setSearch,
 }: {
-	rentals: RentalItem[];
+	rentals: any[];
 	search: string;
 	setSearch: (v: string) => void;
 }) => (
 	<div className="max-w-5xl mx-auto p-4 bg-white rounded-lg shadow">
-		<div className="mb-4">
+		<div className="p-4">
 			<input
 				type="text"
 				placeholder="ค้นหา..."
@@ -202,7 +166,7 @@ const ScrollableRentalList = ({
 				className="border border-gray-300 rounded-md p-2 w-[30%]"
 			/>
 		</div>
-		<div className="bg-white rounded-lg p-4 max-h-[600px] overflow-y-auto space-y-4 h-[600px]">
+		<div className="bg-white rounded-lg p-4 max-h-[600px] overflow-y-auto space-y-4">
 			{rentals.length > 0 ? (
 				rentals.map((r) => <RentalCard key={r.id} rental={r} />)
 			) : (
@@ -216,10 +180,64 @@ const ScrollableRentalList = ({
 
 const Page = () => {
 	const [search, setSearch] = useState("");
+	const [rentalsData, setRentalsData] = useState<any[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	const session = useSession();
+
+	useEffect(() => {
+		const fetchRentals = async () => {
+			try {
+				const response = await fetch(
+					`/api/rental/user/${session?.data?.user.id}`
+				);
+				const data = await response.json();
+				console.log("Fetched rentals:", data);
+
+				const mapped = data.map((r: any) => ({
+					id: r.id,
+					name: r.item?.item_name || "ชื่อสินค้า",
+					store: r.lessor_info?.first_name || "ชื่อร้าน",
+					startDate: formatThaiDate(r.start_date) ?? "-",
+					endDate: formatThaiDate(r.end_date) ?? "-",
+					duration: getDuration(r.start_date, r.end_date),
+					price: r.payment?.total_price ?? 0,
+					status: mapStatus(r.status, r.payment?.status),
+					image: r.item?.images?.[0] || "",
+					rating: 0,
+					actions: mapActions(
+						mapStatus(r.status, r.payment?.status),
+						r.id,
+						0
+					),
+				}));
+
+				setRentalsData(mapped);
+			} catch (error) {
+				console.error("Error fetching rentals:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchRentals();
+	}, [session]);
+
 	const filteredByTab = (predicate: (s: string) => boolean) =>
 		rentalsData
 			.filter((r) => predicate(r.status))
 			.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
+
+	const formatThaiDate = (d: string) =>
+		new Date(d).toLocaleString("th-TH", {
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+
+	if (loading) return <div className="text-center p-10">Loading...</div>;
 
 	return (
 		<div className="p-4 max-w-5xl mx-auto">
@@ -246,13 +264,13 @@ const Page = () => {
 						setSearch={setSearch}
 					/>
 				</TabItem>
-				<TabItem title="Being Returned">
+				{/* <TabItem title="Being Returned">
 					<ScrollableRentalList
 						rentals={filteredByTab(statusGroups.returning)}
 						search={search}
 						setSearch={setSearch}
 					/>
-				</TabItem>
+				</TabItem> */}
 				<TabItem title="Rental Completed">
 					<ScrollableRentalList
 						rentals={filteredByTab(statusGroups.completed)}
@@ -267,13 +285,13 @@ const Page = () => {
 						setSearch={setSearch}
 					/>
 				</TabItem>
-				<TabItem title="Penalty">
+				{/* <TabItem title="Penalty">
 					<ScrollableRentalList
 						rentals={filteredByTab(statusGroups.penalty)}
 						search={search}
 						setSearch={setSearch}
 					/>
-				</TabItem>
+				</TabItem> */}
 			</Tabs>
 		</div>
 	);

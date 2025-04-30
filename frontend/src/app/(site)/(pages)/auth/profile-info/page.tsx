@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 
 import { Button, Label, TextInput } from "flowbite-react";
 
-const ProfileInfo = () => {
+import { useSession } from "@/lib/auth-client";
+
+const Page = () => {
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [phone, setPhone] = useState("");
@@ -16,31 +18,112 @@ const ProfileInfo = () => {
 	const [district, setDistrict] = useState("");
 	const [province, setProvince] = useState("");
 	const [postalCode, setPostalCode] = useState("");
-	const [file, setFile] = useState<File | null>(null);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.files && event.target.files[0]) {
-			const selectedFile = event.target.files[0];
-			setFile(selectedFile);
-			setPreviewUrl(URL.createObjectURL(selectedFile));
+
+	const session = useSession();
+
+	useEffect(() => {
+		if (session?.data?.user) {
+			const fetchUser = async () => {
+				try {
+					const response = await fetch(
+						`/api/user/info/${session?.data?.user.id}`
+					);
+
+					if (!response.ok) {
+						throw new Error("Failed to fetch user info");
+					}
+					const data = await response.json();
+					setFirstName(data.first_name || "");
+					setLastName(data.last_name || "");
+					setPhone(data.phone_number || "");
+					setIdCard(data.citizen_id || "");
+					setDob(
+						data.birth_date
+							? new Date(data.birth_date)
+									.toISOString()
+									.split("T")[0]
+							: ""
+					);
+					setGender(data.gender || "");
+					setAddress(data.residence_info || "");
+					setSubdistrict(data.sub_district || "");
+					setDistrict(data.district || "");
+					setProvince(data.province || "");
+					setPostalCode(data.postal_code || "");
+					console.log("Fetched user:", data);
+				} catch (error) {
+					console.error("Error fetching user info:", error);
+				}
+			};
+
+			fetchUser();
 		}
-	};
-	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+	}, [session]);
+
+	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		const formData = new FormData();
-		formData.append("firstName", firstName);
-		formData.append("lastName", lastName);
-		formData.append("phone", phone);
-		formData.append("idCard", idCard);
-		formData.append("dob", dob);
-		formData.append("gender", gender);
-		formData.append("address", address);
-		formData.append("subdistrict", subdistrict);
-		formData.append("district", district);
-		formData.append("province", province);
-		formData.append("postalCode", postalCode);
-		if (file) {
-			formData.append("file", file);
+		const userInfo = {
+			first_name: firstName,
+			last_name: lastName,
+			phone_number: phone,
+			citizen_id: idCard,
+			birth_date: dob,
+			gender,
+			address,
+			subdistrict,
+			district,
+			province,
+			postal_code: postalCode,
+			user_id: session?.data?.user.id,
+		};
+
+		try {
+			const response = await fetch(
+				`/api/user/info/${session?.data?.user.id}`
+			);
+
+			if (response.ok) {
+				const updateResponse = await fetch(
+					`/api/user/info/${session?.data?.user.id}`,
+					{
+						method: "PUT",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify(userInfo),
+					}
+				);
+
+				if (!updateResponse.ok) {
+					throw new Error("Failed to update user info");
+				}
+
+				const updateData = await updateResponse.json();
+				console.log("User info updated successfully:", updateData);
+				window.location.href = "/";
+			} else {
+				const createResponse = await fetch(
+					`/api/user/info/${session?.data?.user.id}`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify(userInfo),
+					}
+				);
+
+				if (!createResponse.ok) {
+					throw new Error("Failed to create user info");
+				}
+
+				const createData = await createResponse.json();
+				console.log("User info created successfully:", createData);
+				window.location.href = "/";
+			}
+		} catch (error) {
+			console.error("Error processing user info:", error);
+			alert("Failed to process user info. Please try again.");
 		}
 	};
 
@@ -63,13 +146,12 @@ const ProfileInfo = () => {
 					</div>
 					<form onSubmit={handleSubmit} className="w-full">
 						<div className="flex items-start w-full">
-							<div className="flex flex-col flex-1 min-w-0 gap-4 pr-6">
+							<div className="flex flex-col flex-1 min-w-0 gap-2 pr-6">
 								<Label htmlFor="first-name">First Name</Label>
 								<TextInput
 									id="first-name"
 									type="text"
 									required
-									className=""
 									value={firstName}
 									onChange={(e) =>
 										setFirstName(e.target.value)
@@ -80,7 +162,6 @@ const ProfileInfo = () => {
 									id="last-name"
 									type="text"
 									required
-									className=""
 									value={lastName}
 									onChange={(e) =>
 										setLastName(e.target.value)
@@ -104,37 +185,6 @@ const ProfileInfo = () => {
 									value={idCard}
 									onChange={(e) => setIdCard(e.target.value)}
 								/>
-								<div className="flex justify-between items-center mt-4 mb-4 mx-auto w-full">
-									{previewUrl ? (
-										<img
-											src={previewUrl}
-											alt="Preview"
-											className="mx-auto w-20 h-20 rounded-full"
-										/>
-									) : (
-										<img
-											src="/icons/logo_black.svg"
-											alt="Logo"
-											className="mx-auto w-20 h-20"
-										/>
-									)}
-									<label
-										htmlFor="file-upload"
-										className="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white text-center text-sm py-2 px-4 rounded-lg h-fit"
-									>
-										Choose Image
-									</label>
-									<input
-										type="file"
-										id="file-upload"
-										accept="image/*"
-										onChange={handleFileChange}
-										className="hidden"
-									/>
-								</div>
-							</div>
-							<div className="w-px bg-gray-300 self-stretch shrink-0"></div>
-							<div className="flex flex-col flex-1 min-w-0 gap-4 pl-6">
 								<Label htmlFor="dob">Date of Birth</Label>
 								<TextInput
 									id="dob"
@@ -144,14 +194,12 @@ const ProfileInfo = () => {
 									onChange={(e) => setDob(e.target.value)}
 									placeholder="dd/mm/yy"
 								/>
+							</div>
+							<div className="w-px bg-gray-300 self-stretch shrink-0"></div>
+							<div className="flex flex-col flex-1 min-w-0 gap-2 pl-6">
 								<Label>Gender</Label>
 								<div className="flex flex-wrap">
-									{[
-										"Male",
-										"Female",
-										"Non-binary",
-										"Not Say",
-									].map((g) => (
+									{["Male", "Female", "Other"].map((g) => (
 										<div key={g} className="w-1/2 mb-2">
 											<label className="flex items-center gap-2">
 												<input
@@ -160,10 +208,24 @@ const ProfileInfo = () => {
 													value={g}
 													onChange={(e) =>
 														setGender(
-															e.target.value
+															e.target.value ===
+																"Male"
+																? "M"
+																: e.target
+																		.value ===
+																  "Female"
+																? "F"
+																: "O"
 														)
 													}
-													checked={gender === g}
+													checked={
+														(gender === "M" &&
+															g === "Male") ||
+														(gender === "F" &&
+															g === "Female") ||
+														(gender === "O" &&
+															g === "Other")
+													}
 												/>
 												{g}
 											</label>
@@ -255,4 +317,4 @@ const ProfileInfo = () => {
 	);
 };
 
-export default ProfileInfo;
+export default Page;

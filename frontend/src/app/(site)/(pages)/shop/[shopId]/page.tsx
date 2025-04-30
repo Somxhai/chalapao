@@ -4,54 +4,94 @@ import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 
-import { data as addresses } from "@/data/address";
-import { data as categories } from "@/data/category";
-import { data as items } from "@/data/item";
-import { data as itemImages } from "@/data/item_image";
-import { data as userReviews } from "@/data/user_review";
-import { data as users } from "@/data/user";
-
-const userId = "2222222222";
-const shop = users.find((u) => u.id === userId);
-const address = shop?.address.find((a) => a.is_primary);
-
 const Page = () => {
+	const { userId } = useParams<{ userId: string }>();
+
+	const [shop, setShop] = useState<any>(null);
+	const [address, setAddress] = useState<any>(null);
+	const [categories, setCategories] = useState<any[]>([]);
+	const [items, setItems] = useState<any[]>([]);
+	const [itemImages, setItemImages] = useState<any[]>([]);
+	const [reviews, setReviews] = useState<any[]>([]);
 	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
 		null
 	);
 	const [showAllItems, setShowAllItems] = useState(false);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchData = async () => {
+			try {
+				const [userRes, categoryRes, itemRes, reviewRes] =
+					await Promise.all([
+						fetch(`/api/user/info/${userId}`),
+						fetch(`/api/category`),
+						fetch(`/api/item/user/${userId}`),
+						fetch(`/api/user/review/${userId}`),
+					]);
+
+				if (
+					!userRes.ok ||
+					!categoryRes.ok ||
+					!itemRes.ok ||
+					!reviewRes.ok
+				) {
+					throw new Error("Failed to fetch some data");
+				}
+
+				const [userData, categoryData, itemData, reviewData] =
+					await Promise.all([
+						userRes.json(),
+						categoryRes.json(),
+						itemRes.json(),
+						reviewRes.json(),
+					]);
+
+				setShop(userData);
+				setAddress(userData.address?.find((a: any) => a.is_primary));
+				setCategories(categoryData);
+				setItems(itemData);
+				setReviews(reviewData);
+			} catch (error) {
+				console.error(error);
+				notFound();
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		if (userId) fetchData();
+	}, [userId]);
+
 	const filteredItems = items.filter((item) => {
-		const isOwner = item.owner_id === userId;
 		const inCategory = selectedCategoryId
 			? item.category_id === selectedCategoryId
 			: true;
-		console.log(
-			"selectedCategoryId:",
-			selectedCategoryId,
-			"item.category_id:",
-			item.category_id
-		);
-		return isOwner && inCategory;
+		return inCategory;
 	});
+
 	const itemsToShow = showAllItems
 		? filteredItems
 		: filteredItems.slice(0, 3);
-	const shopReviewsWithReviewer = userReviews
-		.filter((r) => r.user_id === userId)
-		.map((r) => {
-			const reviewer = users.find((u) => u.id === r.reviewer_id);
-			return {
-				...r,
-				reviewer_name: `${reviewer?.first_name || "ไม่ทราบ"} ${
-					reviewer?.last_name || ""
-				}`,
-			};
-		});
+
+	const shopReviewsWithReviewer = reviews.map((r) => ({
+		...r,
+		reviewer_name: `${r.reviewer_info?.first_name || "Unknown"} ${
+			r.reviewer_info?.last_name || ""
+		}`,
+	}));
+
 	const getFirstImage = (itemId: string) =>
-		itemImages.find((img) => img.item_id === itemId)?.image_url ||
+		itemImages.find((img) => img.item_id === itemId)?.path ||
 		"/default-image.png";
+
+	if (loading) return <div className="text-center py-20">Loading...</div>;
+
+	if (!shop) return notFound();
+
 	return (
 		<>
+			{/* Shop Header */}
 			<div className="flex justify-between items-start p-6 w-full max-w-[1200px] mx-auto border-b border-gray-300 mb-8">
 				<div className="flex-shrink-0">
 					<img
@@ -71,22 +111,24 @@ const Page = () => {
 						</span>
 					</div>
 					<p className="text-sm text-gray-600 mt-1">
-						ให้บริการเช่าอุปกรณ์ครบวงจร พร้อมคำแนะนำจากมืออาชีพ
+						Equipment rental service with professional advice.
 					</p>
 				</div>
 				<div className="w-[400px] text-sm text-gray-500 text-right break-words leading-relaxed">
 					<div>
-						ชื่อ: {shop?.first_name} {shop?.last_name}
+						Name: {shop?.first_name} {shop?.last_name}
 					</div>
-					<div>โทร: {shop?.phone}</div>
+					<div>Phone: {shop?.phone_number}</div>
 					<div>
-						ที่อยู่:{" "}
+						Address:{" "}
 						{address
-							? `${address.residence_info}, ${address.subdistrict}, ${address.district}, ${address.province} ${address.postal_code}`
-							: "ไม่พบที่อยู่"}
+							? `${address.residence_info}, ${address.sub_district}, ${address.district}, ${address.province} ${address.postal_code}`
+							: "No address found"}
 					</div>
 				</div>
 			</div>
+
+			{/* Category Tabs */}
 			<div className="flex gap-6 justify-center pb-4 mb-8">
 				<button
 					className={`text-md font-medium ${
@@ -99,7 +141,7 @@ const Page = () => {
 						setShowAllItems(false);
 					}}
 				>
-					ทั้งหมด
+					All
 				</button>
 				{categories.map((cat) => (
 					<button
@@ -118,10 +160,12 @@ const Page = () => {
 					</button>
 				))}
 			</div>
+
+			{/* Items */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-[1200px] mx-auto mb-10">
 				{itemsToShow.length === 0 ? (
 					<p className="text-center text-gray-500 col-span-full">
-						ไม่พบสินค้าในหมวดนี้
+						No items found in this category
 					</p>
 				) : (
 					itemsToShow.map((item) => (
@@ -130,24 +174,24 @@ const Page = () => {
 								<div className="relative w-full aspect-square mb-2">
 									<img
 										src={getFirstImage(item.id)}
-										alt={item.name}
+										alt={item.item_name}
 										className="absolute inset-0 w-full h-full object-contain rounded"
 									/>
 								</div>
 								<div className="text-md font-semibold">
-									{item.name}
+									{item.item_name}
 								</div>
 								<div className="text-sm text-gray-500">
-									{item.price_per_day} บาท / วัน
+									{item.price_per_day} THB / day
 								</div>
 								<div
 									className={`text-xs mt-1 ${
-										item.item_status === "Available"
+										item.item_status === "available"
 											? "text-green-600"
 											: "text-red-500"
 									}`}
 								>
-									{item.item_status === "Available"
+									{item.item_status === "available"
 										? "Available"
 										: "Rented"}
 								</div>
@@ -156,17 +200,21 @@ const Page = () => {
 					))
 				)}
 			</div>
+
+			{/* Show More Button */}
 			{!showAllItems && filteredItems.length > 3 && (
 				<div className="flex justify-center mb-12">
 					<button
 						className="bg-gray-100 text-gray-700 px-6 py-2 rounded-md"
 						onClick={() => setShowAllItems(true)}
 					>
-						แสดงเพิ่มเติม
+						Show More
 					</button>
 				</div>
 			)}
-			<div className="max-w-[1200px] mx-auto mb-10 mt-10 pt-10 border-t border-gray-300 ">
+
+			{/* Reviews */}
+			<div className="max-w-[1200px] mx-auto mb-10 mt-10 pt-10 border-t border-gray-300">
 				<h3 className="text-xl font-semibold mb-4">Customer Reviews</h3>
 				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
 					{shopReviewsWithReviewer.map((review) => (

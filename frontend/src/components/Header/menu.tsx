@@ -7,13 +7,45 @@ import {
 	DropdownItem,
 	NavbarToggle,
 } from "flowbite-react";
-import { UserType } from "@/types/user";
 
-const Menu = ({ user }: { user: UserType }) => {
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useSession, signOut } from "@/lib/auth-client";
+
+const Menu = () => {
+	const session = useSession();
+	const [user, setUser] = useState<any>(null);
+
+	useEffect(() => {
+		if (session?.data?.user) {
+			const fetchUser = async () => {
+				try {
+					const response = await fetch(
+						`/api/user/info/${session?.data?.user.id}`
+					);
+					if (!response.ok) {
+						throw new Error("Failed to fetch user info");
+					}
+					const data = await response.json();
+					setUser(data);
+					console.log("Fetched user:", data);
+				} catch (error) {
+					console.error("Error fetching user info:", error);
+				}
+			};
+
+			fetchUser();
+		}
+	}, [session]);
+
+	const signOutBtn = () => {
+		signOut();
+		window.location.href = "/auth/sign-in";
+	};
 	return (
 		<>
-			<button
-				type="button"
+			{/* <Link
+				href="/rentals"
 				className="inline-flex items-center rounded-lg p-2 text-gray-500
 				hover:bg-gray-100 focus:outline-none focus:ring-2
 				focus:ring-gray-200 dark:text-gray-400
@@ -40,9 +72,9 @@ const Menu = ({ user }: { user: UserType }) => {
 						fill="currentColor"
 					/>
 				</svg>
-			</button>
-			<button
-				type="button"
+			</Link> */}
+			<Link
+				href="/rentals"
 				className="inline-flex items-center rounded-lg p-2 text-gray-500
 				hover:bg-gray-100 focus:outline-none focus:ring-2
 				focus:ring-gray-200 dark:text-gray-400
@@ -73,7 +105,7 @@ const Menu = ({ user }: { user: UserType }) => {
 						fill="currentColor"
 					/>
 				</svg>
-			</button>
+			</Link>
 			<Dropdown
 				arrowIcon={false}
 				inline
@@ -106,15 +138,11 @@ const Menu = ({ user }: { user: UserType }) => {
 			>
 				<DropdownHeader>
 					<span className="block text-sm">
-						{user.first_name} {user.last_name}
-					</span>
-					<span className="block truncate text-sm font-medium">
-						{user.email}
+						{user?.first_name} {user?.last_name}
 					</span>
 				</DropdownHeader>
-				<DropdownItem>Profile</DropdownItem>
 				<DropdownDivider />
-				<DropdownItem>Sign Out</DropdownItem>
+				<DropdownItem onClick={signOutBtn}>Sign Out</DropdownItem>
 				{/* <DropdownItem>Sign In</DropdownItem>
 				<DropdownItem>Sign Up</DropdownItem> */}
 			</Dropdown>

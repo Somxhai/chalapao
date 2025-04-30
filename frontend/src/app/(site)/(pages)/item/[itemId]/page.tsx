@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Key } from "react";
 import { useParams, notFound } from "next/navigation";
 
 import { Carousel } from "flowbite-react";
@@ -11,15 +11,11 @@ import { ItemReviewType } from "@/types/item_review";
 const Page = () => {
 	const { itemId } = useParams();
 
-	const [item, setItem] = useState<ItemType>();
+	const [item, setItem] = useState<any>();
 	const [itemReviews, setItemReviews] = useState<ItemReviewType[]>([]);
 
-	const [startDate, setStartDate] = useState<string>(
-		new Date("4/26/2025").toISOString().split("T")[0]
-	);
-	const [endDate, setEndDate] = useState<string>(
-		new Date("5/26/2025").toISOString().split("T")[0]
-	);
+	const [startDate, setStartDate] = useState<string>();
+	const [endDate, setEndDate] = useState<string>();
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -75,15 +71,17 @@ const Page = () => {
 			<div className="flex items-start gap-10">
 				<div className="w-1/2 aspect-square bg-gray-100 rounded-lg shadow flex items-center justify-center">
 					<Carousel slide={false}>
-						{item.images.map((img, i) => (
-							<div key={i} className="w-full h-full">
-								<img
-									className="rounded-t-lg aspect-square w-full object-cover"
-									src={`http://localhost:8787/${img}`}
-									alt={item.item_name}
-								/>
-							</div>
-						))}
+						{item.images.map(
+							(img: any, i: Key | null | undefined) => (
+								<div key={i} className="w-full h-full">
+									<img
+										className="rounded-t-lg aspect-square w-full object-cover"
+										src={`http://localhost:8787/${img}`}
+										alt={item.item_name}
+									/>
+								</div>
+							)
+						)}
 					</Carousel>
 				</div>
 				<div className="flex flex-col gap-4 w-1/2">
@@ -146,14 +144,13 @@ const Page = () => {
 					</div>
 					<h1 className="text-3xl font-semibold">{item.item_name}</h1>
 					<div className="text-sm text-gray-500">
-						{/* Owner: {owner?.first_name} {owner?.last_name} */}
-						tppoom
-					</div>
-					<p className="text-xs text-gray-400">
+						Owner: {item?.user_info?.first_name}{" "}
+						{item?.user_info?.last_name}
+						<br />
 						{item.rental_terms}
 						<br />
 						{item.penalty_terms}
-					</p>
+					</div>
 					<div className="space-y-2">
 						<h2 className="font-medium">
 							Choose Your Rental Period
