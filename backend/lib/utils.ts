@@ -23,20 +23,22 @@ export const tryCatchService = async <T>(
 
 export async function connect<T>(
   fn: (client: PoolClient) => Promise<T>,
+  externalClient?: PoolClient,
 ): Promise<T> {
-  const client = await pool.connect();
+  const client = externalClient ?? await pool.connect();
   try {
     return await fn(client);
   } finally {
-    client.release();
+    if (!externalClient) client.release();
   }
 }
 
 export const safeQuery = async <T>(
   fn: (client: PoolClient) => Promise<T>,
   errorMessage: string,
+  externalClient?: PoolClient,
 ): Promise<T> => {
-  return await connect(fn).catch((e) => {
+  return await connect(fn, externalClient).catch((e) => {
     console.error(errorMessage, e);
     throw new Error(errorMessage);
   });
