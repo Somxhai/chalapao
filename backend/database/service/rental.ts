@@ -1,9 +1,16 @@
 import { safeQuery } from "../../lib/utils.ts";
 import { UUIDTypes } from "uuid";
-import { Rental, RentalAddress } from "../../type/rental.ts";
-import { createPayment } from "./payment.ts";
+import { CombinedRental, Rental, RentalAddress } from "../../type/rental.ts";
+import { createPayment, getPaymentById } from "./payment.ts";
+import { getItemById } from "./item.ts";
+import { getUserInfoByUserId, getUserInfoByUserIds } from "./user_info.ts";
+import { Item, Payment } from "../../type/app.ts";
+import { PoolClient } from "pg";
 
-export type RentalInput = Omit<Rental, "delivery_address" | "return_address">;
+export type RentalInput = Omit<
+  Rental,
+  "delivery_address" | "return_address" | "payment_id"
+>;
 
 export const createRental = async (
   rental: RentalInput,
@@ -20,33 +27,8 @@ export const createRental = async (
     throw new Error("Failed to create rental address");
   }
 
-  const rentalRes = await safeQuery(
-    async (client) =>
-      // Insert rental with the address IDs
-      await client.query<Rental>(
-        `INSERT INTO rental (
-         renter_id, item_id,
-         status, start_date, end_date,
-         delivery_address, return_address
-       )
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *;`,
-        [
-          rental.renter_id,
-          rental.item_id,
-          rental.status,
-          rental.start_date,
-          rental.end_date,
-          deliveryId,
-          returnId,
-        ],
-      ),
-    `Failed to create rental by ${rental.renter_id} for item: ${rental.item_id}`,
-  )
-    .then((res) => res.rows[0]);
-
   const payment = await createPayment(
-    rentalRes.renter_id,
+    rental.renter_id,
     rental.item_id,
     "pending",
     rental.start_date,
@@ -56,6 +38,33 @@ export const createRental = async (
   if (!payment) {
     throw new Error("Failed to create payment");
   }
+
+  const rentalRes = await safeQuery(
+    async (client) =>
+      // Insert rental with the address IDs
+      await client.query<Rental>(
+        `INSERT INTO rental (
+         renter_id, item_id,
+         status, start_date, end_date,
+         delivery_address, return_address, payment_id
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *;`,
+        [
+          rental.renter_id,
+          rental.item_id,
+          rental.status,
+          rental.start_date,
+          rental.end_date,
+          deliveryId,
+          returnId,
+          payment.id,
+        ],
+      ),
+    `Failed to create rental by ${rental.renter_id} for item: ${rental.item_id}`,
+  )
+    .then((res) => res.rows[0]);
+
   return rentalRes;
 };
 
@@ -89,6 +98,17 @@ export const deleteRental = async (
     `Failed to delete rental: ${rentalId}`,
   ).then((res) => res.rows[0]?.id);
 
+export const getRentalAddressById = async (
+  id: UUIDTypes,
+  client?: PoolClient,
+): Promise<RentalAddress> =>
+  await safeQuery(
+    (client) =>
+      client.query(`SELECT * from "rental_address" WHERE id = $1`, [id]),
+    `Failed to get rental address by id: ${id}`,
+    client,
+  ).then((res) => res.rows[0]);
+
 export const createRentalAddress = async (
   address: RentalAddress,
 ): Promise<UUIDTypes> =>
@@ -112,152 +132,110 @@ export const createRentalAddress = async (
     `Failed to create rental address`,
   ).then((res) => res.rows[0]?.id);
 
-export const getRentalById = async (rentalId: UUIDTypes): Promise<Rental> =>
+export const getRentalById = async (
+  rentalId: UUIDTypes,
+): Promise<CombinedRental> =>
   await safeQuery(
-    (client) =>
-      client.query<Rental>(
-        `
-        SELECT
-          r.*,
-          jsonb_build_object(
-            'id', renter.id,
-            'first_name', renter.first_name,
-            'last_name', renter.last_name,
-            'gender', renter.gender,
-            'birth_date', renter.birth_date,
-            'citizen_id', renter.citizen_id,
-            'phone_number', renter.phone_number,
-            'created_at', renter.created_at,
-            'updated_at', renter.updated_at
-          ) AS renter_info,
-          jsonb_build_object(
-            'id', lessor.id,
-            'first_name', lessor.first_name,
-            'last_name', lessor.last_name,
-            'gender', lessor.gender,
-            'birth_date', lessor.birth_date,
-            'citizen_id', lessor.citizen_id,
-            'phone_number', lessor.phone_number,
-            'created_at', lessor.created_at,
-            'updated_at', lessor.updated_at
-          ) AS lessor_info,
-          jsonb_build_object(
-            'id', i.id,
-            'item_name', i.item_name,
-            'description', i.description,
-            'price_per_day', i.price_per_day
-          ) AS item,
-          jsonb_build_object(
-            'id', da.id,
-            'residence_info', da.residence_info,
-            'sub_district', da.sub_district,
-            'district', da.district,
-            'province', da.province,
-            'postal_code', da.postal_code
-          ) AS delivery_address_info,
-          jsonb_build_object(
-            'id', ra.id,
-            'residence_info', ra.residence_info,
-            'sub_district', ra.sub_district,
-            'district', ra.district,
-            'province', ra.province,
-            'postal_code', ra.postal_code
-          ) AS return_address_info,
-          jsonb_build_object(
-            'id', p.id,
-            'status', p.status,
-            'created_at', p.created_at,
-            'updated_at', p.updated_at
-          ) AS payment
-        FROM rental r
-        LEFT JOIN item i ON r.item_id = i.id
-        LEFT JOIN user_info renter ON r.renter_id = renter.user_id
-        LEFT JOIN user_info lessor ON i.owner_id = lessor.user_id
-        LEFT JOIN rental_address da ON r.delivery_address = da.id
-        LEFT JOIN rental_address ra ON r.return_address = ra.id
-        LEFT JOIN payment p ON p.renter_id = r.renter_id
-        WHERE r.id = $1
-        GROUP BY
-          r.id, renter.id, lessor.id, i.id,
-          da.id, ra.id, p.id
-        `,
-        [rentalId],
-      ),
+    async (client) => {
+      const rental = await client.query<Rental>(
+        `SELECT * FROM rental WHERE id = $1`,
+        [
+          rentalId,
+        ],
+      ).then((res) => res.rows[0]);
+      console.log("GET rental", rental);
+
+      const item = await getItemById(rental.item_id, client);
+      const renterUserInfo = await getUserInfoByUserId(
+        rental.renter_id,
+        client,
+      );
+
+      const deliveryAddress = await getRentalAddressById(
+        rental.delivery_address,
+        client,
+      );
+      const returnAddress = await getRentalAddressById(
+        rental.return_address,
+        client,
+      );
+
+      const payment = await getPaymentById(rental.payment_id, client);
+      return {
+        rental,
+        renter_info: renterUserInfo,
+        lessor_info: item.owner_info,
+        item: item.item,
+        delivery_address: deliveryAddress,
+        return_address: returnAddress,
+        payment,
+      } as CombinedRental;
+    },
     `Failed to get rental by id: ${rentalId}`,
-  ).then((res) => res.rows[0]);
+  ).then((res) => res);
 
 export const getRentalsByUserId = async (
   userId: UUIDTypes,
-): Promise<Rental[]> =>
+): Promise<CombinedRental[]> =>
   await safeQuery(
-    (client) =>
-      client.query<Rental>(
-        `
-        SELECT
-          r.*,
-          jsonb_build_object(
-            'id', renter.id,
-            'first_name', renter.first_name,
-            'last_name', renter.last_name,
-            'gender', renter.gender,
-            'birth_date', renter.birth_date,
-            'citizen_id', renter.citizen_id,
-            'phone_number', renter.phone_number,
-            'created_at', renter.created_at,
-            'updated_at', renter.updated_at
-          ) AS renter_info,
-          jsonb_build_object(
-            'id', lessor.id,
-            'first_name', lessor.first_name,
-            'last_name', lessor.last_name,
-            'gender', lessor.gender,
-            'birth_date', lessor.birth_date,
-            'citizen_id', lessor.citizen_id,
-            'phone_number', lessor.phone_number,
-            'created_at', lessor.created_at,
-            'updated_at', lessor.updated_at
-          ) AS lessor_info,
-          jsonb_build_object(
-            'id', i.id,
-            'item_name', i.item_name,
-            'description', i.description,
-            'price_per_day', i.price_per_day
-          ) AS item,
-          jsonb_build_object(
-            'id', da.id,
-            'residence_info', da.residence_info,
-            'sub_district', da.sub_district,
-            'district', da.district,
-            'province', da.province,
-            'postal_code', da.postal_code
-          ) AS delivery_address_info,
-          jsonb_build_object(
-            'id', ra.id,
-            'residence_info', ra.residence_info,
-            'sub_district', ra.sub_district,
-            'district', ra.district,
-            'province', ra.province,
-            'postal_code', ra.postal_code
-          ) AS return_address_info,
-          jsonb_build_object(
-            'id', p.id,
-            'status', p.status,
-            'created_at', p.created_at,
-            'updated_at', p.updated_at
-          ) AS payment
-        FROM rental r
-        LEFT JOIN item i ON r.item_id = i.id
-        LEFT JOIN user_info renter ON r.renter_id = renter.user_id
-        LEFT JOIN user_info lessor ON i.owner_id = lessor.user_id
-        LEFT JOIN rental_address da ON r.delivery_address = da.id
-        LEFT JOIN rental_address ra ON r.return_address = ra.id
-        LEFT JOIN payment p ON p.renter_id = r.renter_id
-        WHERE r.renter_id = $1
-        GROUP BY
-          r.id, renter.id, lessor.id, i.id,
-          da.id, ra.id, p.id
-        `,
+    async (client) => {
+      const rentals = await client.query<
+        {
+          rental: Rental;
+          rental_address: RentalAddress;
+          delivery_address: RentalAddress;
+          payment: Payment;
+        }
+      >(
+        `SELECT
+        row_to_json(rental) AS rental,
+        row_to_json(ra) AS rental_address,
+        row_to_json(da) AS delivery_address,
+        row_to_json(p) AS payment
+            FROM rental
+            LEFT JOIN rental_address ra ON rental.return_address = ra.id
+            LEFT JOIN rental_address da ON rental.delivery_address = da.id
+            LEFT JOIN payment p ON p.id = rental.payment_id
+            WHERE rental.renter_id = $1`,
         [userId],
-      ),
+      ).then((res) => res.rows);
+
+      const itemIds = rentals.map((rental) => rental.rental.item_id);
+      const items = await client.query<Item>(
+        `SELECT * FROM item WHERE id = ANY($1)`,
+        [itemIds],
+      ).then((res) => res.rows);
+
+      const renterUserInfo = await getUserInfoByUserId(userId, client);
+
+      const lessorIds = items.map((item) => item.owner_id);
+      // console.log("lessorIds", lessorIds);
+      const lessorUserInfo = await getUserInfoByUserIds(lessorIds, client);
+      // console.log("lessorUserInfo", lessorUserInfo);
+
+      const fullRentals = rentals.map((rental) => {
+        const item = items.find((item) => item.id === rental.rental.item_id);
+        const lessor_info = lessorUserInfo.find((lessor) =>
+          lessor.user_id === item?.owner_id
+        );
+
+        if (!item) {
+          return;
+        }
+
+        return {
+          rental: rental.rental,
+          return_address: rental.rental_address,
+          delivery_address: rental.delivery_address,
+          payment: rental.payment,
+          item,
+          lessor_info,
+          renter_info: renterUserInfo,
+        } as CombinedRental;
+      }).filter((data) => {
+        return data !== undefined;
+      });
+      return fullRentals;
+    },
     `Failed to get rentals for user: ${userId}`,
-  ).then((res) => res.rows);
+  ).then((res) => res);

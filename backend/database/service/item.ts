@@ -1,61 +1,154 @@
 import { UUIDTypes } from "uuid";
-import { FullItem, Item } from "../../type/app.ts";
+import { FullItem, Item, Keyword } from "../../type/app.ts";
 import { safeQuery } from "../../lib/utils.ts";
+import { getUserInfoByUserId } from "./user_info.ts";
+import { Address, UserInfo } from "../../type/user_info.ts";
+import { PoolClient } from "pg";
+
+export const getItemsByUserId = async (
+  id: UUIDTypes,
+): Promise<FullItem[]> =>
+  await safeQuery(
+    async (client) => {
+      const items = await client.query<Item>(
+        `SELECT * FROM item WHERE owner_id = $1 ORDER BY created_at DESC`,
+        [id],
+      ).then((res) => res.rows);
+
+      const itemIds = items.map((item) => item.id);
+      const ownerIds = items.map((item) => item.owner_id);
+
+      const images = await client.query<{ item_id: UUIDTypes; path: string }>(
+        `SELECT item_id, path FROM item_image WHERE item_id = ANY($1)`,
+        [itemIds],
+      ).then((res) => res.rows);
+
+      const keywords = await client.query<Keyword>(
+        `SELECT * FROM keyword WHERE item_id = ANY($1)`,
+        [itemIds],
+      ).then((res) => res.rows);
+
+      const addresses = await client.query<Address>(
+        `SELECT * FROM address WHERE user_id = ANY($1)`,
+        [ownerIds],
+      ).then((res) => res.rows);
+
+      const userInfo = await client.query<UserInfo>(
+        `SELECT * FROM user_info WHERE user_id = ANY($1)`,
+        [ownerIds],
+      ).then((res) => res.rows);
+
+      const categoryIds = [...new Set(items.map((item) => item.category_id))]
+        .filter(
+          (id): id is UUIDTypes => id !== null,
+        );
+
+      const categoryNames = await client.query<{ id: UUIDTypes; name: string }>(
+        `SELECT id, name FROM category WHERE id = ANY($1)`,
+        [categoryIds],
+      ).then((res) => res.rows);
+
+      return items.map((item) => {
+        const itemImages = images.filter((img) => img.item_id === item.id);
+        const itemKeywords = keywords.filter((k) => k.item_id === item.id).map((
+          k,
+        ) => k.keyword);
+        const owner = userInfo.find((u) => u.user_id === item.owner_id);
+        const address = addresses.find((a) => a.user_id === item.owner_id);
+        const category = categoryNames.find((c) => c.id === item.category_id)
+          ?.name;
+
+        if (!owner) return;
+
+        return {
+          item,
+          images: itemImages.map((img) => img.path),
+          keywords: itemKeywords,
+          owner_info: { ...owner, address: address },
+          category,
+        } as FullItem;
+      }).filter((x) => x !== undefined);
+    },
+    `Failed to get items by user ID: ${id}`,
+  ).then((res) => res);
 
 export const getItems = async (
   offset = 0,
   limit = 30,
 ): Promise<FullItem[]> =>
   await safeQuery(
-    (client) =>
-      client.query<FullItem>(
-        `
-SELECT
-  i.*,
-  COALESCE(array_agg(DISTINCT ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images,
-  COALESCE(array_agg(DISTINCT k.keyword) FILTER (WHERE k.keyword IS NOT NULL), '{}') AS keywords,
-  c.name AS category_name,
-  jsonb_build_object(
-    'id', u.id,
-    'first_name', u.first_name,
-    'last_name', u.last_name,
-    'gender', u.gender,
-    'birth_date', u.birth_date,
-    'citizen_id', u.citizen_id,
-    'phone_number', u.phone_number,
-    'created_at', u.created_at,
-    'updated_at', u.updated_at,
-    'addresses', COALESCE(
-      jsonb_agg(
-        DISTINCT jsonb_build_object(
-          'id', a.id,
-          'user_id', a.user_id,
-          'is_primary', a.is_primary,
-          'residence_info', a.residence_info,
-          'sub_district', a.sub_district,
-          'district', a.district,
-          'province', a.province,
-          'postal_code', a.postal_code,
-          'created_at', a.created_at,
-          'updated_at', a.updated_at
-        )
-      ) FILTER (WHERE a.id IS NOT NULL),
-      '[]'
-    )
-  ) AS user_info
-FROM "item" i
-LEFT JOIN item_image ii ON i.id = ii.item_id
-LEFT JOIN keyword k ON i.id = k.item_id
-LEFT JOIN category c ON i.category_id = c.id
-LEFT JOIN user_info u ON i.owner_id = u.user_id
-LEFT JOIN address a ON u.user_id = a.user_id
-GROUP BY i.id, c.name, u.id, u.first_name, u.last_name, u.gender, u.birth_date, u.citizen_id, u.phone_number, u.created_at, u.updated_at
-LIMIT $1 OFFSET $2;
-`,
+    async (client) => {
+      const items = await client.query<Item>(
+        `SELECT * FROM item ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
         [limit, offset],
-      ),
+      ).then((res) => res.rows);
+
+      const itemIds = items.map((item) => item.id);
+      const images = await client.query<{ item_id: UUIDTypes; path: string }>(
+        `SELECT item_id, path FROM item_image WHERE item_id = ANY($1)`,
+        [itemIds],
+      ).then((res) => res.rows);
+
+      const categoryIds = Array.from(
+        new Set(
+          items.map((item) => item.category_id).filter((id): id is UUIDTypes =>
+            id !== null
+          ),
+        ),
+      );
+
+      const categoryNames = await client.query<{ id: UUIDTypes; name: string }>(
+        `SELECT id, name FROM category WHERE id = ANY($1)`,
+        [categoryIds],
+      ).then((res) => res.rows);
+
+      const ownerIds = items.map((item) => item.owner_id);
+
+      const lessorUserInfo = await client.query<UserInfo>(
+        `SELECT * FROM user_info WHERE user_id = ANY($1)`,
+        [ownerIds],
+      ).then((res) => res.rows);
+
+      const keywords = await client.query<
+        Keyword
+      >(
+        `SELECT * FROM keyword WHERE item_id = ANY($1)`,
+        [itemIds],
+      ).then((res) => res.rows);
+
+      const addresses = await client.query<Address>(
+        `SELECT * FROM address WHERE user_id = ANY($1)`,
+        [ownerIds],
+      ).then((res) => res.rows);
+
+      return items.map((item) => {
+        const itemImages = images.filter((image) => image.item_id === item.id);
+        const categoryName = categoryNames.find((category) =>
+          category.id === item.category_id
+        )?.name;
+        const ownerInfo = lessorUserInfo.find((user) =>
+          user.user_id === item.owner_id
+        );
+        const keywordsForItem = keywords.filter((keyword) =>
+          keyword.item_id === item.id
+        ).map((keyword) => keyword.keyword);
+        const address = addresses.find((address) =>
+          address.user_id === item.owner_id
+        );
+        if (!ownerInfo) {
+          return;
+        }
+        return {
+          item,
+          category: categoryName,
+          images: itemImages.map((image) => image.path),
+          keywords: keywordsForItem,
+          owner_info: { ...ownerInfo, address: address },
+        } as FullItem;
+      }).filter((data) => data !== undefined);
+    },
     `Failed to get items: offset = ${offset}, limit = ${limit}`,
-  ).then((res) => res.rows);
+  ).then((res) => res);
 
 export const getItemsByCategory = async (
   id: UUIDTypes,
@@ -63,162 +156,109 @@ export const getItemsByCategory = async (
   limit = 30,
 ): Promise<FullItem[]> =>
   await safeQuery(
-    (client) =>
-      client.query<FullItem>(
-        `SELECT
-  i.*,
-  COALESCE(array_agg(DISTINCT ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images,
-  COALESCE(array_agg(DISTINCT k.keyword) FILTER (WHERE k.keyword IS NOT NULL), '{}') AS keywords,
-  c.name AS category_name,
-  jsonb_build_object(
-    'id', u.id,
-    'first_name', u.first_name,
-    'last_name', u.last_name,
-    'gender', u.gender,
-    'birth_date', u.birth_date,
-    'citizen_id', u.citizen_id,
-    'phone_number', u.phone_number,
-    'created_at', u.created_at,
-    'updated_at', u.updated_at,
-    'addresses', COALESCE(
-      jsonb_agg(
-        DISTINCT jsonb_build_object(
-          'id', a.id,
-          'user_id', a.user_id,
-          'is_primary', a.is_primary,
-          'residence_info', a.residence_info,
-          'sub_district', a.sub_district,
-          'district', a.district,
-          'province', a.province,
-          'postal_code', a.postal_code,
-          'created_at', a.created_at,
-          'updated_at', a.updated_at
-        )
-      ) FILTER (WHERE a.id IS NOT NULL),
-      '[]'
-    )
-  ) AS user_info
-FROM "item" i
-LEFT JOIN item_image ii ON i.id = ii.item_id
-LEFT JOIN keyword k ON i.id = k.item_id
-LEFT JOIN category c ON i.category_id = c.id
-LEFT JOIN user_info u ON i.owner_id = u.user_id
-LEFT JOIN address a ON u.user_id = a.user_id
-WHERE i.category_id = $1
-GROUP BY i.id, c.name, u.id, u.first_name, u.last_name, u.gender, u.birth_date, u.citizen_id, u.phone_number, u.created_at, u.updated_at
-LIMIT $2 OFFSET $3`,
+    async (client) => {
+      const items = await client.query<Item>(
+        `SELECT * FROM item WHERE category_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
         [id, limit, offset],
-      ),
+      ).then((res) => res.rows);
+
+      const itemIds = items.map((item) => item.id);
+      const ownerIds = items.map((item) => item.owner_id);
+
+      const images = await client.query<{ item_id: UUIDTypes; path: string }>(
+        `SELECT item_id, path FROM item_image WHERE item_id = ANY($1)`,
+        [itemIds],
+      ).then((res) => res.rows);
+
+      const keywords = await client.query<Keyword>(
+        `SELECT * FROM keyword WHERE item_id = ANY($1)`,
+        [itemIds],
+      ).then((res) => res.rows);
+
+      const addresses = await client.query<Address>(
+        `SELECT * FROM address WHERE user_id = ANY($1)`,
+        [ownerIds],
+      ).then((res) => res.rows);
+
+      const userInfo = await client.query<UserInfo>(
+        `SELECT * FROM user_info WHERE user_id = ANY($1)`,
+        [ownerIds],
+      ).then((res) => res.rows);
+
+      const categoryIds = [...new Set(items.map((item) => item.category_id))]
+        .filter(
+          (id): id is UUIDTypes => id !== null,
+        );
+
+      const categoryNames = await client.query<{ id: UUIDTypes; name: string }>(
+        `SELECT id, name FROM category WHERE id = ANY($1)`,
+        [categoryIds],
+      ).then((res) => res.rows);
+
+      return items.map((item) => {
+        const itemImages = images.filter((img) => img.item_id === item.id);
+        const itemKeywords = keywords.filter((k) => k.item_id === item.id).map((
+          k,
+        ) => k.keyword);
+        const owner = userInfo.find((u) => u.user_id === item.owner_id);
+        const address = addresses.find((a) => a.user_id === item.owner_id);
+        const category = categoryNames.find((c) => c.id === item.category_id)
+          ?.name;
+
+        if (!owner) return;
+
+        return {
+          item,
+          images: itemImages.map((img) => img.path),
+          keywords: itemKeywords,
+          owner_info: { ...owner, address },
+          category,
+        } as FullItem;
+      }).filter((x) => x !== undefined);
+    },
     `Failed to get items by category: ${id}`,
-  ).then((res) => res.rows);
+  ).then((res) => res);
 
-export const getItemsByUserId = async (id: string): Promise<FullItem[]> =>
-  await safeQuery(
-    (client) =>
-      client.query<FullItem>(
-        `SELECT
-  i.*,
-  COALESCE(array_agg(DISTINCT ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images,
-  COALESCE(array_agg(DISTINCT k.keyword) FILTER (WHERE k.keyword IS NOT NULL), '{}') AS keywords,
-  c.name AS category_name,
-  jsonb_build_object(
-    'id', u.id,
-    'first_name', u.first_name,
-    'last_name', u.last_name,
-    'gender', u.gender,
-    'birth_date', u.birth_date,
-    'citizen_id', u.citizen_id,
-    'phone_number', u.phone_number,
-    'created_at', u.created_at,
-    'updated_at', u.updated_at,
-    'addresses', COALESCE(
-      jsonb_agg(
-        DISTINCT jsonb_build_object(
-          'id', a.id,
-          'user_id', a.user_id,
-          'is_primary', a.is_primary,
-          'residence_info', a.residence_info,
-          'sub_district', a.sub_district,
-          'district', a.district,
-          'province', a.province,
-          'postal_code', a.postal_code,
-          'created_at', a.created_at,
-          'updated_at', a.updated_at
-        )
-      ) FILTER (WHERE a.id IS NOT NULL),
-      '[]'
-    )
-  ) AS user_info
-FROM "item" i
-LEFT JOIN item_image ii ON i.id = ii.item_id
-LEFT JOIN keyword k ON i.id = k.item_id
-LEFT JOIN category c ON i.category_id = c.id
-LEFT JOIN user_info u ON i.owner_id = u.user_id
-LEFT JOIN address a ON u.user_id = a.user_id
-WHERE i.owner_id = $1
-GROUP BY i.id, c.name, u.id, u.first_name, u.last_name, u.gender, u.birth_date, u.citizen_id, u.phone_number, u.created_at, u.updated_at;`,
-        [id],
-      ),
-    `Failed to get items by user ID: ${id}`,
-  ).then((res) => res.rows);
+export const getItemById = async (id: UUIDTypes, client?: PoolClient): Promise<FullItem> =>
+  await safeQuery(async (client) => {
+    const item = await client.query<Item>(
+      `SELECT * FROM item WHERE id = $1`,
+      [id],
+    ).then((res) => res.rows[0]);
 
-export const getItemById = async (id: UUIDTypes): Promise<FullItem> =>
-  await safeQuery(
-    (client) =>
-      client.query<FullItem>(
-        `SELECT
-  i.*,
-  COALESCE(array_agg(DISTINCT ii.path) FILTER (WHERE ii.path IS NOT NULL), '{}') AS images,
-  COALESCE(array_agg(DISTINCT k.keyword) FILTER (WHERE k.keyword IS NOT NULL), '{}') AS keywords,
-  c.name AS category_name,
-  jsonb_build_object(
-    'id', u.id,
-    'first_name', u.first_name,
-    'last_name', u.last_name,
-    'gender', u.gender,
-    'birth_date', u.birth_date,
-    'citizen_id', u.citizen_id,
-    'phone_number', u.phone_number,
-    'created_at', u.created_at,
-    'updated_at', u.updated_at,
-    'addresses', COALESCE(
-      jsonb_agg(
-        DISTINCT jsonb_build_object(
-          'id', a.id,
-          'user_id', a.user_id,
-          'is_primary', a.is_primary,
-          'residence_info', a.residence_info,
-          'sub_district', a.sub_district,
-          'district', a.district,
-          'province', a.province,
-          'postal_code', a.postal_code,
-          'created_at', a.created_at,
-          'updated_at', a.updated_at
-        )
-      ) FILTER (WHERE a.id IS NOT NULL),
-      '[]'
-    )
-  ) AS user_info
-FROM "item" i
-LEFT JOIN item_image ii ON i.id = ii.item_id
-LEFT JOIN keyword k ON i.id = k.item_id
-LEFT JOIN category c ON i.category_id = c.id
-LEFT JOIN user_info u ON i.owner_id = u.user_id
-LEFT JOIN address a ON u.user_id = a.user_id
-WHERE i.id = $1
-GROUP BY i.id, c.name, u.id, u.first_name, u.last_name, u.gender, u.birth_date, u.citizen_id, u.phone_number, u.created_at, u.updated_at;`,
-        [id],
-      ),
-    `Failed to get item by ID: ${id}`,
-  ).then((res) => res.rows[0]);
+    const images = await client.query<{ path: string }>(
+      `SELECT path FROM item_image WHERE item_id = $1`,
+      [id],
+    ).then((res) => res.rows.map((r) => r.path));
+
+    const keywords = await client.query<{ keyword: string }>(
+      `SELECT keyword FROM keyword WHERE item_id = $1`,
+      [id],
+    ).then((res) => res.rows.map((r) => r.keyword));
+
+    const categoryName = await client.query<{ name: string }>(
+      `SELECT name FROM category WHERE id = $1`,
+      [item.category_id],
+    ).then((res) => res.rows[0]?.name ?? null);
+
+    const userInfo = await getUserInfoByUserId(item.owner_id, client); // Assume you already have this function
+
+    return {
+      item,
+      images,
+      keywords,
+      category: categoryName,
+      owner_info: userInfo,
+    } as FullItem;
+  }, `Failed to get item by ID: ${id}`, client);
 
 export const createItem = async (
   item: Item,
   owner_id: UUIDTypes,
-): Promise<FullItem> =>
+): Promise<Item> =>
   await safeQuery(
     (client) =>
-      client.query<FullItem>(
+      client.query<Item>(
         `
         INSERT INTO "item" (
           owner_id, item_name, description, rental_terms,
@@ -244,10 +284,10 @@ export const createItem = async (
 export const updateItem = async (
   item: Item,
   owner_id: UUIDTypes,
-): Promise<FullItem> =>
+): Promise<Item> =>
   await safeQuery(
     (client) =>
-      client.query<FullItem>(
+      client.query<Item>(
         `
         UPDATE "item"
         SET item_name = $1, description = $2, rental_terms = $3,
