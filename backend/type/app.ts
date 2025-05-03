@@ -1,4 +1,5 @@
 import { UUIDTypes } from "uuid";
+import { Address, UserInfo } from "./user_info.ts";
 
 // Item Interface
 export interface Item {
@@ -76,22 +77,10 @@ export interface Payment {
   updated_at: string;
 }
 
-// User Info Interface
-export interface UserInfo {
-  id: UUIDTypes;
-  first_name: string;
-  last_name: string;
-  gender: string;
-  birth_date: string;
-  citizen_id: string;
-  phone_number: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface FullItem extends Item {
+export interface FullItem {
+  item: Item;
   images: string[]; // from item_image
   keywords: string[]; // from keyword
-  category_name: string | null; // from category
-  user_info: UserInfo;
+  category: string | null; // from category
+  owner_info: UserInfo & { address: Address };
 }
