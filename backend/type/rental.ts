@@ -1,4 +1,6 @@
 import { UUIDTypes } from "uuid";
+import { Item, Payment } from "./app.ts";
+import { Address, UserInfo } from "./user_info.ts";
 
 export type RentalStatus = "pending" | "accepted" | "cancel" | "completed";
 // Rental Interface
@@ -10,6 +12,7 @@ export interface Rental {
   return_address: UUIDTypes;
   status: RentalStatus;
   start_date: Date;
+  payment_id: UUIDTypes;
   end_date: Date;
   created_at?: Date;
   updated_at?: Date;
@@ -27,4 +30,14 @@ export interface RentalAddress {
   postal_code: string;
   created_at?: Date;
   updated_at?: Date;
+}
+
+export interface CombinedRental {
+  rental: Rental;
+  return_address: RentalAddress;
+  delivery_address: RentalAddress;
+  payment: Payment;
+  item: Item;
+  renter_info: UserInfo & { address: Address };
+  lessor_info: UserInfo & { address: Address };
 }
