@@ -1,20 +1,53 @@
 import { UUIDTypes } from "uuid";
 import { safeQuery } from "../../lib/utils.ts";
-import { UserInfo } from "../../type/app.ts";
-import { UserInfoRequest } from "../../type/user_info.ts";
+import { Address, UserInfo, UserInfoRequest } from "../../type/user_info.ts";
+import { PoolClient } from "pg";
 
 // Get user_info by user_id (new schema)
 export const getUserInfoByUserId = async (
   userId: UUIDTypes,
-): Promise<UserInfo | null> =>
+  client?: PoolClient,
+): Promise<UserInfo & { address: Address }> =>
   await safeQuery(
     (client) =>
-      client.query<UserInfo>(
-        `SELECT * FROM "user_info" WHERE user_id = $1 LIMIT 1;`,
+      client.query<{ user_info: UserInfo; address: Address }>(
+        `SELECT row_to_json(user_info) user_info,
+row_to_json(address) address FROM "user_info"
+LEFT JOIN address ON address.user_id = $1
+WHERE user_info.user_id = $1 LIMIT 1;`,
         [userId],
       ),
     `Failed to get user info: ${userId}`,
-  ).then((res) => res.rows[0]);
+    client,
+  ).then((res) => {
+    const row = res.rows[0];
+    return {
+      ...row.user_info,
+      address: row.address,
+    };
+  });
+
+export const getUserInfoByUserIds = async (
+  userIds: UUIDTypes[],
+  client?: PoolClient,
+): Promise<(UserInfo & { address: Address })[]> =>
+  await safeQuery(
+    (client) =>
+      client.query<{ user_info: UserInfo; address: Address }>(
+        `SELECT row_to_json(user_info) user_info,
+row_to_json(address) address FROM "user_info"
+LEFT JOIN address ON address.user_id = ANY($1)
+WHERE user_info.user_id = ANY($1) LIMIT 1;`,
+        [userIds],
+      ),
+    `Failed to get user info: ${userIds}`, client
+  ).then((res) => {
+    const rows = res.rows;
+    return rows.map((row) => ({
+      ...row.user_info,
+      address: row.address,
+    }));
+  });
 
 // Create user_info for a user (new schema)
 export const createUserInfo = async (

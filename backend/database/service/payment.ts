@@ -2,6 +2,7 @@ import { UUIDTypes } from "uuid";
 import { calculateTotalPrice, safeQuery } from "../../lib/utils.ts";
 import { Payment } from "../../type/app.ts";
 import { getItemById } from "./item.ts";
+import { PoolClient } from "pg";
 
 export const createPayment = async (
   renter_id: UUIDTypes,
@@ -18,7 +19,7 @@ export const createPayment = async (
       end_date = new Date(end_date);
 
       const total_price = calculateTotalPrice(
-        item.price_per_day,
+        item.item.price_per_day,
         start_date,
         end_date,
       );
@@ -49,4 +50,15 @@ export const updatePaymentStatus = async (
         [status, paymentId],
       ),
     `Failed to update payment status: ${paymentId}`,
+  ).then((res) => res.rows[0]);
+
+export const getPaymentById = async (
+  paymentId: UUIDTypes,
+  client?: PoolClient,
+): Promise<Payment> =>
+  await safeQuery(
+    (client) =>
+      client.query(`SELECT * FROM payment WHERE id = $1;`, [paymentId]),
+    `Failed to get payment: ${paymentId}`,
+    client,
   ).then((res) => res.rows[0]);
