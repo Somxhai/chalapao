@@ -5,6 +5,7 @@ import { APIError } from "better-auth/api";
 import { Item } from "../type/app.ts";
 import { itemApp } from "../handler/item.ts";
 import { assertEquals } from "@std/assert";
+import { createUserInfo } from "../database/service/user_info.ts";
 
 type UserType = "renter" | "lessor" | "admin";
 
@@ -34,10 +35,37 @@ export const createUser = async (user_type: UserType = "renter"): Promise<{
   });
 
   const { token, user }: {
-    token: string | null;
-    user: typeof auth.$Infer.Session.user | null;
+    token: string;
+    user: typeof auth.$Infer.Session.user;
   } = await signin.json();
   const cookie = signin.headers.get("set-cookie");
+
+  const client = await pool.connect();
+  const userInfo = await client.query<{ exists: boolean }>(
+    `SELECT  1 FROM "user_info" WHERE user_id = $1`,
+    [user.id],
+  );
+  client.release();
+
+  if (!userInfo.rows[0]) {
+    await createUserInfo({
+      user_id: user.id,
+      first_name: user.name,
+      birth_date: new Date(),
+      citizen_id: Array.from(
+        { length: 10 },
+        () => Math.floor(Math.random() * 10),
+      )
+        .join(""),
+      last_name: "User",
+      gender: "M",
+      phone_number: Array.from(
+        { length: 10 },
+        () => Math.floor(Math.random() * 10),
+      )
+        .join(""),
+    });
+  }
 
   return { token, user, cookie };
 };
@@ -61,13 +89,14 @@ const setRole = async (email: string, user_type: UserType) => {
 
 const tryToSignUpUser = async (email: string, password: string) => {
   try {
-    await auth.api.signUpEmail({
+    const result = await auth.api.signUpEmail({
       body: {
         name: "test-chalapao-" + crypto.randomUUID(),
         email,
         password,
       },
     });
+    console.log("Sign up result: ", result.user.email);
   } catch (error) {
     if (error instanceof APIError) {
       const msg = error.message;

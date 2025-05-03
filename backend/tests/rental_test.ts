@@ -7,7 +7,7 @@ import { rentalApp } from "../handler/rental.ts";
 import { itemApp } from "../handler/item.ts";
 import { createTestItem, createUser } from "./utils.ts";
 import { Item } from "../type/app.ts";
-import { Rental, RentalAddress } from "../type/rental.ts";
+import { CombinedRental, Rental, RentalAddress } from "../type/rental.ts";
 import { UUIDTypes } from "uuid";
 import { RentalInput } from "../database/service/rental.ts";
 
@@ -100,8 +100,8 @@ Deno.test("Rental routes", async (t) => {
     });
 
     assertEquals(res.status, 200);
-    const rental = await res.json();
-    assertEquals(rental.id, rentalId);
+    const rental: CombinedRental = await res.json();
+    assertEquals(rental.rental.id, rentalId);
     assertExists(rental.item);
     assertExists(rental.renter_info);
     assertExists(rental.lessor_info);
@@ -117,13 +117,14 @@ Deno.test("Rental routes", async (t) => {
           "Content-Type": "application/json",
         },
       });
+      console.log("Rentals", res);
 
       assertEquals(res.status, 200);
-      const rentals = await res.json();
-      console.log("Rentals", rentals);
+      const rentals: CombinedRental[] = await res.json();
+
       assertEquals(Array.isArray(rentals), true);
       assertArrayIncludes(
-        rentals.map((r: Rental) => r.id),
+        rentals.map((r) => r.rental.id),
         [rentalId],
       );
     },

@@ -21,6 +21,20 @@ Deno.test("UserInfo routes", async (t) => {
     phone_number: "0812345678",
   };
 
+  await t.step("Remove user info if exists", async () => {
+    await safeQuery(
+      async (client) => {
+        const deleteRes = await client.query(
+          `DELETE FROM "user_info" WHERE user_id = $1`,
+          [user.id],
+        );
+
+        return deleteRes.rowCount;
+      },
+      "Failed to remove user info",
+    );
+  });
+
   await t.step("POST /user_info - create user info", async () => {
     const res = await userInfoApp.request("/" + user.id, {
       method: "POST",
