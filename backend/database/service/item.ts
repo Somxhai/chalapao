@@ -219,38 +219,45 @@ export const getItemsByCategory = async (
     `Failed to get items by category: ${id}`,
   ).then((res) => res);
 
-export const getItemById = async (id: UUIDTypes, client?: PoolClient): Promise<FullItem> =>
-  await safeQuery(async (client) => {
-    const item = await client.query<Item>(
-      `SELECT * FROM item WHERE id = $1`,
-      [id],
-    ).then((res) => res.rows[0]);
+export const getItemById = async (
+  id: UUIDTypes,
+  client?: PoolClient,
+): Promise<FullItem> =>
+  await safeQuery(
+    async (client) => {
+      const item = await client.query<Item>(
+        `SELECT * FROM item WHERE id = $1`,
+        [id],
+      ).then((res) => res.rows[0]);
 
-    const images = await client.query<{ path: string }>(
-      `SELECT path FROM item_image WHERE item_id = $1`,
-      [id],
-    ).then((res) => res.rows.map((r) => r.path));
+      const images = await client.query<{ path: string }>(
+        `SELECT path FROM item_image WHERE item_id = $1`,
+        [id],
+      ).then((res) => res.rows.map((r) => r.path));
 
-    const keywords = await client.query<{ keyword: string }>(
-      `SELECT keyword FROM keyword WHERE item_id = $1`,
-      [id],
-    ).then((res) => res.rows.map((r) => r.keyword));
+      const keywords = await client.query<{ keyword: string }>(
+        `SELECT keyword FROM keyword WHERE item_id = $1`,
+        [id],
+      ).then((res) => res.rows.map((r) => r.keyword));
 
-    const categoryName = await client.query<{ name: string }>(
-      `SELECT name FROM category WHERE id = $1`,
-      [item.category_id],
-    ).then((res) => res.rows[0]?.name ?? null);
+      const categoryName = await client.query<{ name: string }>(
+        `SELECT name FROM category WHERE id = $1`,
+        [item.category_id],
+      ).then((res) => res.rows[0]?.name ?? null);
 
-    const userInfo = await getUserInfoByUserId(item.owner_id, client); // Assume you already have this function
+      const userInfo = await getUserInfoByUserId(item.owner_id, client); // Assume you already have this function
 
-    return {
-      item,
-      images,
-      keywords,
-      category: categoryName,
-      owner_info: userInfo,
-    } as FullItem;
-  }, `Failed to get item by ID: ${id}`, client);
+      return {
+        item,
+        images,
+        keywords,
+        category: categoryName,
+        owner_info: userInfo,
+      } as FullItem;
+    },
+    `Failed to get item by ID: ${id}`,
+    client,
+  );
 
 export const createItem = async (
   item: Item,
@@ -288,14 +295,12 @@ export const updateItem = async (
   await safeQuery(
     (client) =>
       client.query<Item>(
-        `
-        UPDATE "item"
+        `UPDATE "item"
         SET item_name = $1, description = $2, rental_terms = $3,
             penalty_terms = $4, item_status = $5, price_per_day = $6,
             category_id = $7
         WHERE id = $8 AND owner_id = $9
-        RETURNING *;
-      `,
+        RETURNING *;`,
         [
           item.item_name,
           item.description,

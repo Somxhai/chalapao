@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
+import withFlowbiteReact from "flowbite-react/plugin/nextjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+	async rewrites() {
+		return [
+			{
+				source: "/api/:path((?!auth).*)", // Proxy API requests except /auth
+				destination: "http://localhost:8787/:path*", // Backend server
+			},
+		];
+	},
 };
 
-export default nextConfig;
+export default withFlowbiteReact(nextConfig);

@@ -13,27 +13,26 @@ export const createPayment = async (
 ): Promise<Payment> => {
   const item = await getItemById(item_id);
 
-  return await safeQuery(
-    (client) => {
-      start_date = new Date(start_date);
-      end_date = new Date(end_date);
+  return await safeQuery((client) => {
+    start_date = new Date(start_date);
+    end_date = new Date(end_date);
 
-      const total_price = calculateTotalPrice(
-        item.item.price_per_day,
-        start_date,
-        end_date,
-      );
+    const total_price = calculateTotalPrice(
+      item.item.price_per_day,
+      start_date,
+      end_date,
+    );
 
-      return client.query<Payment>(
-        `INSERT INTO payment (
+    return client.query<Payment>(
+      `INSERT INTO payment (
           renter_id, status, total_price
          ) VALUES ($1, $2, $3)
          RETURNING *;`,
-        [renter_id, status, total_price],
-      );
-    },
-    `Failed to create payment for renter: ${renter_id}`,
-  ).then((res) => res.rows[0]);
+      [renter_id, status, total_price],
+    );
+  }, `Failed to create payment for renter: ${renter_id}`).then(
+    (res) => res.rows[0],
+  );
 };
 
 export const updatePaymentStatus = async (

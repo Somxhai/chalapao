@@ -84,9 +84,7 @@ export const updateRentalStatus = async (
     `Failed to update rental status for: ${rentalId}`,
   ).then((res) => res.rows[0]);
 
-export const deleteRental = async (
-  rentalId: UUIDTypes,
-): Promise<UUIDTypes> =>
+export const deleteRental = async (rentalId: UUIDTypes): Promise<UUIDTypes> =>
   await safeQuery(
     (client) =>
       client.query<{ id: UUIDTypes }>(
