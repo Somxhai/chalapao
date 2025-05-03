@@ -2,7 +2,7 @@ import { safeQuery } from "../../lib/utils.ts";
 import { UUIDTypes } from "uuid";
 import { CombinedRental, Rental, RentalAddress } from "../../type/rental.ts";
 import { createPayment, getPaymentById } from "./payment.ts";
-import { getItemById } from "./item.ts";
+import { getItemById, getItemsByUserId } from "./item.ts";
 import { getUserInfoByUserId, getUserInfoByUserIds } from "./user_info.ts";
 import { Item, Payment } from "../../type/app.ts";
 import { PoolClient } from "pg";
@@ -141,7 +141,6 @@ export const getRentalById = async (
           rentalId,
         ],
       ).then((res) => res.rows[0]);
-      console.log("GET rental", rental);
 
       const item = await getItemById(rental.item_id, client);
       const renterUserInfo = await getUserInfoByUserId(
@@ -236,4 +235,70 @@ export const getRentalsByUserId = async (
       return fullRentals;
     },
     `Failed to get rentals for user: ${userId}`,
+  ).then((res) => res);
+
+export const getRentalsAssociateWithItemOwner = async (
+  owner_id: UUIDTypes,
+): Promise<CombinedRental[]> =>
+  await safeQuery(
+    async (client) => {
+      const items = await getItemsByUserId(owner_id, client);
+
+      const itemIds = items.map((item) => item.item.id);
+      if (itemIds.length === 0) return [];
+
+      const rentals = await client.query<Rental>(
+        `SELECT * FROM rental WHERE item_id = ANY($1)`,
+        [itemIds],
+      ).then((res) => res.rows);
+
+      const renterIds = [...new Set(rentals.map((r) => r.renter_id))];
+      const paymentIds = rentals.map((r) => r.payment_id);
+      const deliveryIds = rentals.map((r) => r.delivery_address);
+      const returnIds = rentals.map((r) => r.return_address);
+
+      const deliveryAddresses = await client.query<RentalAddress>(
+        `SELECT * FROM rental_address WHERE id = ANY($1)`,
+        [deliveryIds],
+      ).then((res) => res.rows);
+
+      const returnAddresses = await client.query<RentalAddress>(
+        `SELECT * FROM rental_address WHERE id = ANY($1)`,
+        [returnIds],
+      ).then((res) => res.rows);
+
+      const renterInfo = await getUserInfoByUserIds(renterIds, client);
+
+      const payments = await client.query<Payment>(
+        `SELECT * FROM payment WHERE id = ANY($1)`,
+        [paymentIds],
+      ).then((res) => res.rows);
+
+      const lessorUserInfo = await getUserInfoByUserId(owner_id, client);
+
+      return rentals.map((rental) => {
+        const item = items.find((i) => i.item.id === rental.item_id)!;
+        const payment = payments.find((p) => p.id === rental.payment_id)!;
+        const renter_info = renterInfo.find((u) =>
+          u.user_id === rental.renter_id
+        )!;
+        const delivery_address = deliveryAddresses.find((a) =>
+          a.id === rental.delivery_address
+        )!;
+        const return_address = returnAddresses.find((a) =>
+          a.id === rental.return_address
+        )!;
+
+        return {
+          rental,
+          item: item.item,
+          renter_info,
+          lessor_info: lessorUserInfo,
+          delivery_address,
+          return_address,
+          payment,
+        } as CombinedRental;
+      });
+    },
+    `Failed to get rentals associated with item owner: ${owner_id}`,
   ).then((res) => res);

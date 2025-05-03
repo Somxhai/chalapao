@@ -7,6 +7,7 @@ import {
   createRental,
   deleteRental,
   getRentalById,
+  getRentalsAssociateWithItemOwner,
   getRentalsByUserId,
   RentalInput,
   updateRentalStatus,
@@ -42,6 +43,16 @@ rentalApp.get("/user/:user_id", async (c) => {
   const userId = c.req.param("user_id");
 
   const rentals = await tryCatchService(() => getRentalsByUserId(userId));
+
+  return c.json(rentals);
+});
+
+rentalApp.get("/lessor/:owner_id", async (c) => {
+  const ownerId = c.req.param("owner_id");
+
+  const rentals = await tryCatchService(() =>
+    getRentalsAssociateWithItemOwner(ownerId)
+  );
 
   return c.json(rentals);
 });

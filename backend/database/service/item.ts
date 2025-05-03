@@ -7,6 +7,7 @@ import { PoolClient } from "pg";
 
 export const getItemsByUserId = async (
   id: UUIDTypes,
+  client?: PoolClient,
 ): Promise<FullItem[]> =>
   await safeQuery(
     async (client) => {
@@ -70,6 +71,7 @@ export const getItemsByUserId = async (
       }).filter((x) => x !== undefined);
     },
     `Failed to get items by user ID: ${id}`,
+    client,
   ).then((res) => res);
 
 export const getItems = async (
