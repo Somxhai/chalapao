@@ -9,16 +9,19 @@ import { Button, Card } from "flowbite-react";
 import Header from "@/components/Header";
 import Links from "@/components/Header/links";
 
-const thaiStatus = (rentalStatus: string, paymentStatus?: string): string => {
-	if (rentalStatus === "pending") return "รอผู้ปล่อยเช่ายืนยัน";
+const englishStatus = (
+	rentalStatus: string,
+	paymentStatus?: string
+): string => {
+	if (rentalStatus === "pending") return "Waiting for lender confirmation";
 	if (rentalStatus === "accepted" && paymentStatus === "pending")
-		return "ผู้ปล่อยเช่ายืนยันแล้ว";
+		return "Lender confirmed";
 	if (rentalStatus === "accepted" && paymentStatus === "completed")
-		return "เช่าอยู่";
-	if (rentalStatus === "cancel") return "ยกเลิกแล้ว";
-	if (paymentStatus === "failed") return "มีค่าปรับที่ต้องชำระ";
-	if (rentalStatus === "completed") return "เช่าสำเร็จแล้ว";
-	return "ไม่ทราบสถานะ";
+		return "Currently renting";
+	if (rentalStatus === "cancel") return "Cancelled";
+	if (paymentStatus === "failed") return "Outstanding payment required";
+	if (rentalStatus === "completed") return "Rental completed";
+	return "Unknown status";
 };
 
 const calcDuration = (start?: string, end?: string): string => {
@@ -26,7 +29,7 @@ const calcDuration = (start?: string, end?: string): string => {
 	const d1 = new Date(start);
 	const d2 = new Date(end);
 	const diffDays = Math.ceil((d2.getTime() - d1.getTime()) / 86_400_000);
-	return `${diffDays} วัน`;
+	return `${diffDays} days`;
 };
 
 const Page = () => {
@@ -38,7 +41,7 @@ const Page = () => {
 		const fetchRental = async () => {
 			try {
 				const response = await fetch(`/api/rental/${rentalId}`);
-				if (!response.ok) throw new Error("ไม่พบข้อมูลเช่า");
+				if (!response.ok) throw new Error("Rental data not found");
 				const data = await response.json();
 				setRental(data);
 				console.log("Fetched rental:", data);
@@ -59,21 +62,25 @@ const Page = () => {
 		item,
 		renter_info,
 		lessor_info,
-		delivery_address_info,
-		return_address_info,
 		payment,
+		delivery_address,
+		return_address,
+		rental: rentalInfo,
 	} = rental;
-	const duration = calcDuration(rental.start_date, rental.end_date);
-	const statusText = thaiStatus(rental.status, payment?.status);
-	const fullDeliveryAddress = delivery_address_info
-		? `${delivery_address_info.residence_info}, ${delivery_address_info.sub_district}, ${delivery_address_info.district}, ${delivery_address_info.province}, ${delivery_address_info.postal_code}`
-		: "-";
-	const fullReturnAddress = return_address_info
-		? `${return_address_info.residence_info}, ${return_address_info.sub_district}, ${return_address_info.district}, ${return_address_info.province}, ${return_address_info.postal_code}`
+
+	const duration = calcDuration(rentalInfo.start_date, rentalInfo.end_date);
+	const statusText = englishStatus(rentalInfo.status, payment?.status);
+
+	const fullDeliveryAddress = delivery_address
+		? `${delivery_address.residence_info}, ${delivery_address.sub_district}, ${delivery_address.district}, ${delivery_address.province}, ${delivery_address.postal_code}`
 		: "-";
 
-	const formatThaiDate = (d: string) =>
-		new Date(d).toLocaleString("th-TH", {
+	const fullReturnAddress = return_address
+		? `${return_address.residence_info}, ${return_address.sub_district}, ${return_address.district}, ${return_address.province}, ${return_address.postal_code}`
+		: "-";
+
+	const formatEnglishDate = (d: string) =>
+		new Date(d).toLocaleString("en-US", {
 			year: "numeric",
 			month: "long",
 			day: "numeric",
@@ -95,51 +102,48 @@ const Page = () => {
 							</h2>
 							<p className="text-gray-600 mb-6">
 								{lessor_info.first_name} {lessor_info.last_name}
-								<Link href={`/shop/${lessor_info.first_name}`}>
-									<span className="text-blue-600 text-sm underline ml-1 hover:text-blue-800">
-										ดูร้านค้า
-									</span>
-								</Link>
+								<span className="text-blue-600 text-sm underline ml-1 hover:text-blue-800">
+									View store
+								</span>
 							</p>
+
 							<div className="grid grid-cols-2 gap-4 mb-6 border-b pb-4">
 								<div>
 									<h3 className="font-bold mb-2">Lender</h3>
 									<p>
-										ผู้ให้เช่า : {lessor_info.first_name}{" "}
+										Lender: {lessor_info.first_name}{" "}
 										{lessor_info.last_name}
 									</p>
-									<p>
-										ที่อยู่จัดส่งคืน : {fullReturnAddress}
-									</p>
+									<p>Return address: {fullReturnAddress}</p>
 								</div>
 								<div>
 									<h3 className="font-bold mb-2">Renter</h3>
 									<p>
-										ผู้เช่า : {renter_info.first_name}{" "}
+										Renter: {renter_info.first_name}{" "}
 										{renter_info.last_name}
 									</p>
-									<p>ที่อยู่จัดส่ง : {fullDeliveryAddress}</p>
+									<p>
+										Delivery address: {fullDeliveryAddress}
+									</p>
 								</div>
 							</div>
 
 							<div className="mb-6">
 								<h3 className="font-bold text-lg mb-2">
-									Renting
+									Renting Details
 								</h3>
-								<p>ระยะเวลาการเช่า : {duration}</p>
+								<p>Rental duration: {duration}</p>
 								<p>
-									ตั้งแต่วันที่ :{" "}
-									{formatThaiDate(rental.start_date)}
+									Start date:{" "}
+									{formatEnglishDate(rentalInfo.start_date)}
 								</p>
 								<p>
-									ถึงวันที่ :{" "}
-									{formatThaiDate(rental.end_date)}
+									End date:{" "}
+									{formatEnglishDate(rentalInfo.end_date)}
 								</p>
-								<Link href="/rental-terms">
-									<span className="text-blue-600 underline text-sm mt-2 inline-block hover:text-blue-800">
-										อ่านเงื่อนไขการเช่า และการปรับ
-									</span>
-								</Link>
+								<span className="text-blue-600 underline text-sm mt-2 inline-block hover:text-blue-800">
+									Read rental terms and penalties
+								</span>
 							</div>
 						</div>
 
@@ -151,8 +155,8 @@ const Page = () => {
 							<div className="w-full flex justify-center">
 								<img
 									className="rounded-lg object-contain w-[200px] h-[200px]"
-									src={`http://localhost:8787/${rental?.item.images[0]}`}
-									alt={rental?.sname}
+									src={`http://localhost:8787/${item.images[0]}`}
+									alt={item.item_name}
 								/>
 							</div>
 
@@ -160,19 +164,20 @@ const Page = () => {
 								<div className="flex gap-4 mb-2">
 									<img
 										className="w-16 h-16 object-cover rounded-lg"
-										src={`http://localhost:8787/${rental?.item.images[0]}`}
-										alt={rental?.sname}
+										src={`http://localhost:8787/${item.images[0]}`}
+										alt={item.item_name}
 									/>
 									<div className="flex-1 text-sm">
 										<p className="font-semibold">
 											{item.item_name}
 										</p>
 										<p>
-											เช่าจาก : {lessor_info.first_name}{" "}
+											Rented from:{" "}
+											{lessor_info.first_name}{" "}
 											{lessor_info.last_name}
 										</p>
 										<p>
-											ผู้เช่า : {renter_info.first_name}{" "}
+											Renter: {renter_info.first_name}{" "}
 											{renter_info.last_name}
 										</p>
 									</div>
@@ -180,9 +185,9 @@ const Page = () => {
 
 								<div className="text-sm text-gray-600">
 									<div className="flex justify-between">
-										<span>ค่าเช่า {duration}</span>
+										<span>Rental fee {duration}</span>
 										<span className="text-lg font-bold">
-											{payment.total_price} บาท
+											{payment.total_price} THB
 										</span>
 									</div>
 								</div>
@@ -192,12 +197,10 @@ const Page = () => {
 
 					<div className="flex justify-between mt-6 text-center">
 						<Link href="/rentals">
-							<Button color="light">
-								ย้อนกลับไปหน้ารายการเช่า
-							</Button>
+							<Button color="light">Back to rentals</Button>
 						</Link>
 						<Link href={`/item/review/${item.id}`}>
-							<Button color="gray">รีวิวสินค้า</Button>
+							<Button color="gray">Review item</Button>
 						</Link>
 					</div>
 				</div>

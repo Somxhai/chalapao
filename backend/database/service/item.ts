@@ -6,73 +6,93 @@ import { Address, UserInfo } from "../../type/user_info.ts";
 import { PoolClient } from "pg";
 
 export const getItemsByUserId = async (
-  id: UUIDTypes,
-  client?: PoolClient,
+	id: UUIDTypes,
+	client?: PoolClient
 ): Promise<FullItem[]> =>
-  await safeQuery(
-    async (client) => {
-      const items = await client.query<Item>(
-        `SELECT * FROM item WHERE owner_id = $1 ORDER BY created_at DESC`,
-        [id],
-      ).then((res) => res.rows);
+	await safeQuery(
+		async (client) => {
+			const items = await client
+				.query<Item>(
+					`SELECT * FROM item WHERE owner_id = $1 ORDER BY created_at DESC`,
+					[id]
+				)
+				.then((res) => res.rows);
 
-      const itemIds = items.map((item) => item.id);
-      const ownerIds = items.map((item) => item.owner_id);
+			const itemIds = items.map((item) => item.id);
+			const ownerIds = items.map((item) => item.owner_id);
 
-      const images = await client.query<{ item_id: UUIDTypes; path: string }>(
-        `SELECT item_id, path FROM item_image WHERE item_id = ANY($1)`,
-        [itemIds],
-      ).then((res) => res.rows);
+			const images = await client
+				.query<{ item_id: UUIDTypes; path: string }>(
+					`SELECT item_id, path FROM item_image WHERE item_id = ANY($1)`,
+					[itemIds]
+				)
+				.then((res) => res.rows);
 
-      const keywords = await client.query<Keyword>(
-        `SELECT * FROM keyword WHERE item_id = ANY($1)`,
-        [itemIds],
-      ).then((res) => res.rows);
+			const keywords = await client
+				.query<Keyword>(
+					`SELECT * FROM keyword WHERE item_id = ANY($1)`,
+					[itemIds]
+				)
+				.then((res) => res.rows);
 
-      const addresses = await client.query<Address>(
-        `SELECT * FROM address WHERE user_id = ANY($1)`,
-        [ownerIds],
-      ).then((res) => res.rows);
+			const addresses = await client
+				.query<Address>(
+					`SELECT * FROM address WHERE user_id = ANY($1)`,
+					[ownerIds]
+				)
+				.then((res) => res.rows);
 
-      const userInfo = await client.query<UserInfo>(
-        `SELECT * FROM user_info WHERE user_id = ANY($1)`,
-        [ownerIds],
-      ).then((res) => res.rows);
+			const userInfo = await client
+				.query<UserInfo>(
+					`SELECT * FROM user_info WHERE user_id = ANY($1)`,
+					[ownerIds]
+				)
+				.then((res) => res.rows);
 
-      const categoryIds = [...new Set(items.map((item) => item.category_id))]
-        .filter(
-          (id): id is UUIDTypes => id !== null,
-        );
+			const categoryIds = [
+				...new Set(items.map((item) => item.category_id)),
+			].filter((id): id is UUIDTypes => id !== null);
 
-      const categoryNames = await client.query<{ id: UUIDTypes; name: string }>(
-        `SELECT id, name FROM category WHERE id = ANY($1)`,
-        [categoryIds],
-      ).then((res) => res.rows);
+			const categoryNames = await client
+				.query<{ id: UUIDTypes; name: string }>(
+					`SELECT id, name FROM category WHERE id = ANY($1)`,
+					[categoryIds]
+				)
+				.then((res) => res.rows);
 
-      return items.map((item) => {
-        const itemImages = images.filter((img) => img.item_id === item.id);
-        const itemKeywords = keywords.filter((k) => k.item_id === item.id).map((
-          k,
-        ) => k.keyword);
-        const owner = userInfo.find((u) => u.user_id === item.owner_id);
-        const address = addresses.find((a) => a.user_id === item.owner_id);
-        const category = categoryNames.find((c) => c.id === item.category_id)
-          ?.name;
+			return items
+				.map((item) => {
+					const itemImages = images.filter(
+						(img) => img.item_id === item.id
+					);
+					const itemKeywords = keywords
+						.filter((k) => k.item_id === item.id)
+						.map((k) => k.keyword);
+					const owner = userInfo.find(
+						(u) => u.user_id === item.owner_id
+					);
+					const address = addresses.find(
+						(a) => a.user_id === item.owner_id
+					);
+					const category = categoryNames.find(
+						(c) => c.id === item.category_id
+					)?.name;
 
-        if (!owner) return;
+					if (!owner) return;
 
-        return {
-          item,
-          images: itemImages.map((img) => img.path),
-          keywords: itemKeywords,
-          owner_info: { ...owner, address: address },
-          category,
-        } as FullItem;
-      }).filter((x) => x !== undefined);
-    },
-    `Failed to get items by user ID: ${id}`,
-    client,
-  ).then((res) => res);
+					return {
+						item,
+						images: itemImages.map((img) => img.path),
+						keywords: itemKeywords,
+						owner_info: { ...owner, address: address },
+						category,
+					} as unknown as FullItem;
+				})
+				.filter((x) => x !== undefined);
+		},
+		`Failed to get items by user ID: ${id}`,
+		client
+	).then((res) => res as FullItem[]);
 
 export const getItems = async (
   offset = 0,

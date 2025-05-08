@@ -6,12 +6,15 @@ import { useParams, notFound } from "next/navigation";
 import { Carousel } from "flowbite-react";
 
 import { ItemType } from "@/types/item";
+import { UserType } from "@/types/user";
 import { ItemReviewType } from "@/types/item_review";
 
 const Page = () => {
 	const { itemId } = useParams();
 
-	const [item, setItem] = useState<any>();
+	const [item, setItem] = useState<ItemType>();
+	const [images, setImages] = useState<string[]>([]);
+	const [ownerInfo, setOwnerInfo] = useState<UserType>();
 	const [itemReviews, setItemReviews] = useState<ItemReviewType[]>([]);
 
 	const [startDate, setStartDate] = useState<string>();
@@ -19,22 +22,17 @@ const Page = () => {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (!itemId) {
-			console.error("Item ID is missing");
-			return;
-		}
-
 		const fetchItems = async () => {
 			try {
 				const response = await fetch(`/api/item/${itemId}`);
-				if (!response.ok) {
-					throw new Error("Failed to fetch item");
-				}
+				if (!response.ok) throw new Error("Failed to fetch item");
 				const data = await response.json();
-				setItem(data);
-				console.log("Fetched item:", data);
+
+				setItem(data.item);
+				setImages(data.images ?? []);
+				setOwnerInfo(data.owner_info);
 			} catch (error) {
-				console.error("Error fetching items:", error);
+				console.error("Error fetching item:", error);
 			} finally {
 				setLoading(false);
 			}
@@ -48,7 +46,6 @@ const Page = () => {
 				}
 				const data = await response.json();
 				setItemReviews(data);
-				console.log("Fetched reviews:", data);
 			} catch (error) {
 				console.error("Error fetching reviews:", error);
 			}
@@ -71,17 +68,15 @@ const Page = () => {
 			<div className="flex items-start gap-10">
 				<div className="w-1/2 aspect-square bg-gray-100 rounded-lg shadow flex items-center justify-center">
 					<Carousel slide={false}>
-						{item.images.map(
-							(img: any, i: Key | null | undefined) => (
-								<div key={i} className="w-full h-full">
-									<img
-										className="rounded-t-lg aspect-square w-full object-cover"
-										src={`http://localhost:8787/${img}`}
-										alt={item.item_name}
-									/>
-								</div>
-							)
-						)}
+						{images.map((img, i) => (
+							<div key={i} className="w-full h-full">
+								<img
+									className="rounded-t-lg aspect-square w-full object-cover"
+									src={`http://localhost:8787/${img}`}
+									alt={item?.item_name}
+								/>
+							</div>
+						))}
 					</Carousel>
 				</div>
 				<div className="flex flex-col gap-4 w-1/2">
@@ -144,8 +139,7 @@ const Page = () => {
 					</div>
 					<h1 className="text-3xl font-semibold">{item.item_name}</h1>
 					<div className="text-sm text-gray-500">
-						Owner: {item?.user_info?.first_name}{" "}
-						{item?.user_info?.last_name}
+						Owner: {ownerInfo?.first_name} {ownerInfo?.last_name}
 						<br />
 						{item.rental_terms}
 						<br />
@@ -225,12 +219,20 @@ const Page = () => {
 							{item.price_per_day}{" "}
 							<span className="text-sm font-normal">Baht</span>
 						</div>
-						<a
-							href={`/rental/confirm/${itemId}?startDate=${startDate}&endDate=${endDate}`}
+						<button
+							onClick={() => {
+								if (!startDate || !endDate) {
+									alert(
+										"Please select both start and end dates."
+									);
+									return;
+								}
+								window.location.href = `/rental/confirm/${itemId}?startDate=${startDate}&endDate=${endDate}`;
+							}}
 							className="bg-gray-700 text-white px-6 py-2 rounded-lg"
 						>
 							Continue
-						</a>
+						</button>
 					</div>
 				</div>
 			</div>
@@ -263,6 +265,18 @@ const Page = () => {
 									).toLocaleDateString()}
 								</span>
 							</div>
+							{review.images && review.images.length > 0 && (
+								<div className="flex gap-2 mt-2">
+									{review.images.map((img, i) => (
+										<img
+											key={i}
+											src={`http://localhost:8787/${img}`}
+											alt={`Review Image ${i + 1}`}
+											className="w-16 h-16 object-cover rounded-lg"
+										/>
+									))}
+								</div>
+							)}
 							<p className="text-sm text-gray-700">
 								{review.comment}
 							</p>

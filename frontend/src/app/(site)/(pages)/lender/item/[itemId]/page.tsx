@@ -17,9 +17,10 @@ const Page = () => {
 		status: "",
 		terms: "",
 		penalty: "",
-		images: [] as (string | File)[], // accept File or string
+		images: [] as (string | File)[],
 	});
 	const [loading, setLoading] = useState(true);
+	const [categories, setCategories] = useState<any[]>([]);
 
 	const handleChange = (
 		e: React.ChangeEvent<
@@ -32,10 +33,10 @@ const Page = () => {
 
 	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files && e.target.files.length > 0) {
-			const file = e.target.files[0];
+			const newFiles = Array.from(e.target.files);
 			setForm((prev) => ({
 				...prev,
-				images: [file], // replace with new file
+				images: newFiles,
 			}));
 		}
 	};
@@ -45,7 +46,6 @@ const Page = () => {
 		try {
 			let response;
 
-			// prepare FormData for create (POST)
 			if (!isEdit) {
 				const formData = new FormData();
 				formData.append(
@@ -60,18 +60,17 @@ const Page = () => {
 						category_id: form.category,
 					})
 				);
-
-				// add file if selected
-				if (form.images.length > 0 && form.images[0] instanceof File) {
-					formData.append("files", form.images[0] as File);
-				}
+				form.images.forEach((img) => {
+					if (img instanceof File) {
+						formData.append("files", img);
+					}
+				});
 
 				response = await fetch(`/api/item`, {
 					method: "POST",
 					body: formData,
 				});
 			} else {
-				// update (PUT) without uploading new file
 				response = await fetch(`/api/item/${itemId}`, {
 					method: "PUT",
 					headers: {
@@ -94,7 +93,6 @@ const Page = () => {
 			}
 
 			const data = await response.json();
-			console.log("Item saved successfully:", data);
 			router.push("/lender/items");
 		} catch (error) {
 			console.error("Error saving item:", error);
@@ -102,10 +100,16 @@ const Page = () => {
 	};
 
 	useEffect(() => {
-		if (itemId === "create") {
-			setLoading(false);
-			return;
-		}
+		const fetchCategories = async () => {
+			try {
+				const res = await fetch("/api/category");
+				const data = await res.json();
+				setCategories(data);
+			} catch (err) {
+				console.error("Failed to fetch categories", err);
+			}
+		};
+
 		const fetchItem = async () => {
 			if (!isEdit) {
 				setLoading(false);
@@ -114,17 +118,24 @@ const Page = () => {
 			try {
 				const response = await fetch(`/api/item/${itemId}`);
 				if (!response.ok) throw new Error("Failed to fetch item");
+
 				const data = await response.json();
+
+				// ตรวจสอบว่า data.item, data.images, data.category มีข้อมูลหรือไม่
+				const item = data.item;
+				const images = data.images || [];
+				const categoryId = item.category_id;
+
 				setForm({
-					name: data.item_name,
-					description: data.description,
-					category: data.category_id,
-					price: data.price_per_day.toString(),
+					name: item.item_name,
+					description: item.description,
+					category: categoryId,
+					price: item.price_per_day,
 					per: "Day",
-					status: data.item_status,
-					terms: data.rental_terms ?? "",
-					penalty: data.penalty_terms ?? "",
-					images: data.images || [],
+					status: item.item_status,
+					terms: item.rental_terms ?? "",
+					penalty: item.penalty_terms ?? "",
+					images: images, // เป็น array ของ string (URL path)
 				});
 			} catch (error) {
 				console.error("Error fetching item:", error);
@@ -133,6 +144,11 @@ const Page = () => {
 			}
 		};
 
+		fetchCategories();
+		if (itemId === "create") {
+			setLoading(false);
+			return;
+		}
 		fetchItem();
 	}, [itemId, isEdit, router]);
 
@@ -172,6 +188,7 @@ const Page = () => {
 					<input
 						type="file"
 						accept="image/*"
+						multiple
 						className="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded"
 						onChange={handleImageChange}
 					/>
@@ -215,21 +232,11 @@ const Page = () => {
 							required
 						>
 							<option value="">Select</option>
-							<option value="77777777-7777-4777-b777-777777777777">
-								Camera
-							</option>
-							<option value="77777777-7777-5777-b777-777777777777">
-								Technology
-							</option>
-							<option value="77777777-7777-6777-b777-777777777777">
-								Clothing
-							</option>
-							<option value="77777777-7777-7777-b777-777777777777">
-								Books
-							</option>
-							<option value="88888888-8888-4888-b888-888888888888">
-								Camping Gear
-							</option>
+							{categories.map((cat) => (
+								<option key={cat.id} value={cat.id}>
+									{cat.name}
+								</option>
+							))}
 						</select>
 					</div>
 					<div>
@@ -298,7 +305,7 @@ const Page = () => {
 				</button>
 				<button
 					type="submit"
-					className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm"
+					className="bg-gray-700 text-white px-6 py-2 rounded-lg"
 				>
 					Save
 				</button>

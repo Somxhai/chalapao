@@ -10,16 +10,7 @@ const Step = (step: number) => {
 							currentStep <= step ? "" : "text-gray-400"
 						}`}
 					>
-						<a
-							href={
-								currentStep == 1
-									? `http://localhost:3000/rental/confirm/99999999-9999-4999-b999-999999999999`
-									: currentStep == 2
-									? `http://localhost:3000/rental/pending/a70800b1-8422-46aa-9026-be4f2eac5b45`
-									: currentStep == 3
-									? `http://localhost:3000/rental/payment/a70800b1-8422-46aa-9026-be4f2eac5b45`
-									: `http://localhost:3000/rental/success/a70800b1-8422-46aa-9026-be4f2eac5b45`
-							}
+						<span
 							className={`w-6 h-6 leading-3 rounded-full flex items-center justify-center ${
 								currentStep <= step
 									? "bg-black text-white"
@@ -27,16 +18,7 @@ const Step = (step: number) => {
 							}`}
 						>
 							{currentStep}
-						</a>
-						{/* <div
-							className={`w-6 h-6 leading-3 rounded-full flex items-center justify-center text-xs ${
-								currentStep <= step
-									? "bg-black text-white"
-									: "border border-gray-400"
-							}`}
-						>
-							{currentStep}
-						</div> */}
+						</span>
 						<span>
 							{
 								["Details", "Confirming", "Payment", "Done"][

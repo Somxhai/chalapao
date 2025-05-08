@@ -56,7 +56,7 @@ const Search = () => {
 				{categories.map((category, index) => (
 					<DropdownItem
 						key={index}
-						href={category.id}
+						href={`/${category.id}`}
 						className="text-sm"
 					>
 						{category.name}

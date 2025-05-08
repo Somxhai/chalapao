@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { useSession } from "@/lib/auth-client";
 
+import { ItemType } from "@/types/item";
+
 const Page = () => {
-	const [items, setItems] = useState<any[]>([]);
+	const [items, setItems] = useState<ItemType[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [search, setSearch] = useState("");
 	const [sortBy, setSortBy] = useState("Latest");
 	const [selectedTab, setSelectedTab] = useState<
-		"All" | "Currently Rented" | "Available" | "Returned"
+		"All" | "Rented" | "Available" | "Unavailable"
 	>("All");
 
 	const session = useSession();
@@ -21,7 +23,13 @@ const Page = () => {
 				const response = await fetch(`/api/item/user/${userId}`);
 				if (!response.ok) throw new Error("Failed to fetch items");
 				const data = await response.json();
-				setItems(data);
+				const dataItems: ItemType[] = data.map((item: any) => {
+					return {
+						...item.item,
+						images: item.images,
+					};
+				});
+				setItems(dataItems);
 			} catch (error) {
 				console.error("Error fetching items:", error);
 			} finally {
@@ -34,7 +42,7 @@ const Page = () => {
 		}
 	}, [userId]);
 
-	const deleteItem = async (itemId: number) => {
+	const deleteItem = async (itemId: string) => {
 		if (confirm("Are you sure you want to delete this item?")) {
 			try {
 				const response = await fetch(`/api/item/${itemId}`, {
@@ -50,13 +58,17 @@ const Page = () => {
 		}
 	};
 
-	// ✅ Add filter by tab here
-	const filterByTab = (item: any) => {
+	const filterByTab = (item: ItemType) => {
 		if (selectedTab === "All") return true;
+
 		if (selectedTab === "Available")
 			return item.item_status === "available";
-		if (selectedTab === "Currently Rented")
-			return item.item_status === "rented"; // Adjust if your DB stores rented status
+
+		if (selectedTab === "Rented") return item.item_status === "rented";
+
+		if (selectedTab === "Unavailable")
+			return item.item_status === "unavailable";
+
 		return true;
 	};
 
@@ -66,7 +78,7 @@ const Page = () => {
 			item.item_name.toLowerCase().includes(search.toLowerCase())
 		)
 		.sort((a, b) => {
-			if (sortBy === "Latest") return 0; // Assume API returns latest first
+			if (sortBy === "Latest") return 0;
 			if (sortBy === "Rating")
 				return (b.item_rating ?? 0) - (a.item_rating ?? 0);
 			if (sortBy === "Price: Low to High")
@@ -79,43 +91,53 @@ const Page = () => {
 	if (loading) return <div className="text-center py-20">Loading...</div>;
 
 	return (
-		<div className="w-full max-w-6xl mx-auto px-6">
+		<div className="w-full max-w-5xl mx-auto px-6">
 			<h1 className="text-2xl font-bold mb-6 text-black">
 				Rental Item Management
 			</h1>
-
-			{/* Tabs */}
-			<div className="flex justify-center gap-20 mb-5 text-sm font-medium border-b border-gray-200">
-				<button
-					onClick={() => setSelectedTab("All")}
-					className={`pb-1 ${
-						selectedTab === "All"
-							? "border-b-2 border-black"
-							: "text-gray-500 hover:text-black"
-					}`}
-				>
-					All
-				</button>
-				<button
-					onClick={() => setSelectedTab("Currently Rented")}
-					className={`pb-1 ${
-						selectedTab === "Currently Rented"
-							? "border-b-2 border-black"
-							: "text-gray-500 hover:text-black"
-					}`}
-				>
-					Currently Rented
-				</button>
-				<button
-					onClick={() => setSelectedTab("Available")}
-					className={`pb-1 ${
-						selectedTab === "Available"
-							? "border-b-2 border-black"
-							: "text-gray-500 hover:text-black"
-					}`}
-				>
-					Available
-				</button>
+			<div className="flex justify-between mb-5 text-sm font-medium border-gray-200">
+				<div className="flex gap-10">
+					<button
+						onClick={() => setSelectedTab("All")}
+						className={`pb-1 ${
+							selectedTab === "All"
+								? "border-b-2 border-black"
+								: "text-gray-500 hover:text-black"
+						}`}
+					>
+						All
+					</button>
+					<button
+						onClick={() => setSelectedTab("Available")}
+						className={`pb-1 ${
+							selectedTab === "Available"
+								? "border-b-2 border-black"
+								: "text-gray-500 hover:text-black"
+						}`}
+					>
+						Available
+					</button>
+					<button
+						onClick={() => setSelectedTab("Rented")}
+						className={`pb-1 ${
+							selectedTab === "Rented"
+								? "border-b-2 border-black"
+								: "text-gray-500 hover:text-black"
+						}`}
+					>
+						Rented
+					</button>
+					<button
+						onClick={() => setSelectedTab("Unavailable")}
+						className={`pb-1 ${
+							selectedTab === "Unavailable"
+								? "border-b-2 border-black"
+								: "text-gray-500 hover:text-black"
+						}`}
+					>
+						Unavailable
+					</button>
+				</div>
 				<a
 					href="/lender/item/create"
 					className="bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-600"
@@ -124,8 +146,7 @@ const Page = () => {
 				</a>
 			</div>
 
-			{/* Item List */}
-			<div className="bg-white p-6 rounded-lg shadow-md w-full md:w-3/4 mx-auto">
+			<div className="bg-white p-6 rounded-lg shadow-md w-full">
 				<div className="flex justify-between items-center mb-4">
 					<input
 						type="text"
@@ -158,9 +179,8 @@ const Page = () => {
 					filteredItems.map((item) => (
 						<div
 							key={item.id}
-							className="flex justify-between items-center border-b border-gray-200 pb-4 mb-4"
+							className="flex justify-between items-center border-t border-gray-200 py-4"
 						>
-							{/* Left */}
 							<div className="flex items-center gap-4">
 								<img
 									src={
@@ -181,7 +201,6 @@ const Page = () => {
 								</div>
 							</div>
 
-							{/* Right */}
 							<div className="text-right">
 								<div className="text-sm text-gray-600 mb-1">
 									Status:{" "}
@@ -194,7 +213,10 @@ const Page = () => {
 									>
 										{item.item_status === "available"
 											? "Available"
-											: "Not Available"}
+											: item.item_status
+													.charAt(0)
+													.toUpperCase() +
+											  item.item_status.slice(1)}
 									</span>{" "}
 									| Rating:{" "}
 									<span className="text-yellow-500 font-medium">
@@ -214,7 +236,7 @@ const Page = () => {
 									</button>
 									<a
 										href={`/lender/item/${item.id}`}
-										className="bg-gray-300 text-black px-3 py-1 rounded-lg hover:bg-gray-400"
+										className="bg-gray-700 text-white px-6 py-2 rounded-lg"
 									>
 										Edit
 									</a>

@@ -3,7 +3,7 @@ export type AddressType = {
 	user_id: string; // VARCHAR, รหัสผู้ใช้
 	is_primary: boolean; // BOOLEAN, เป็นที่อยู่หลัก
 	residence_info: string; // TEXT, ข้อมูลที่อยู่
-	subdistrict: string; // VARCHAR, ตำบล
+	sub_district: string; // VARCHAR, ตำบล
 	district: string; // VARCHAR, อำเภอ
 	province: string; // VARCHAR, จังหวัด
 	postal_code: string; // VARCHAR, รหัสไปรษณีย์

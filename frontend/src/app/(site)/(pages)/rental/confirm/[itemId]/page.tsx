@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
 
 import Step from "@/components/Rental/step";
 import Header from "@/components/Header";
 
 import { ItemType } from "@/types/item";
+import { UserType } from "@/types/user";
 import { useSession } from "@/lib/auth-client";
 
 const Page = () => {
@@ -14,12 +15,14 @@ const Page = () => {
 
 	const session = useSession();
 
-	const [item, setItem] = useState<any>();
+	const [item, setItem] = useState<ItemType>();
+	const [images, setImages] = useState<string[]>([]);
+	const [ownerInfo, setOwnerInfo] = useState<UserType>();
 	const [loading, setLoading] = useState(true);
-	const [user, setUser] = useState<any>(null);
+	const [user, setUser] = useState<UserType>();
 	const [startDate, setStartDate] = useState<Date>();
 	const [endDate, setEndDate] = useState<Date>();
-	const [total, setTotal] = useState<any>(0);
+	const [total, setTotal] = useState<number>(0);
 
 	useEffect(() => {
 		if (session?.data?.user) {
@@ -33,7 +36,6 @@ const Page = () => {
 					}
 					const data = await response.json();
 					setUser(data);
-					console.log("Fetched user:", data);
 				} catch (error) {
 					console.error("Error fetching user info:", error);
 				}
@@ -43,8 +45,8 @@ const Page = () => {
 		}
 	}, [session]);
 
-	const formatThaiDate = (d: string) =>
-		new Date(d).toLocaleString("th-TH", {
+	const formatDate = (d: string) =>
+		new Date(d).toLocaleString("en-US", {
 			year: "numeric",
 			month: "long",
 			day: "numeric",
@@ -60,16 +62,19 @@ const Page = () => {
 					throw new Error("Failed to fetch item");
 				}
 				const data = await response.json();
-				setItem(data);
-				console.log("Fetched item:", data);
+				setItem(data.item);
+				setImages(data.images);
+				setOwnerInfo(data.owner_info);
 				if (startDateParam && endDateParam) {
 					const startDate = new Date(startDateParam);
 					const endDate = new Date(endDateParam);
-					const totalPrice = (
-						(data?.price_per_day *
-							(endDate.getTime() - startDate.getTime())) /
-						(1000 * 3600 * 24)
-					).toFixed(2);
+					const totalPrice = parseFloat(
+						(
+							(data?.item.price_per_day *
+								(endDate.getTime() - startDate.getTime())) /
+							(1000 * 3600 * 24)
+						).toFixed(2)
+					);
 					setTotal(totalPrice);
 				}
 			} catch (error) {
@@ -107,12 +112,16 @@ const Page = () => {
 		) as HTMLInputElement;
 
 		if (!termsCheckbox.checked || !conditionCheckbox.checked) {
-			alert("กรุณายอมรับเงื่อนไขและข้อตกลงก่อนส่งคำขอเช่า");
+			alert(
+				"Please accept the terms and conditions before submitting the rental request."
+			);
 			return;
 		}
 
 		if (!item || !user || !startDate || !endDate) {
-			alert("ข้อมูลไม่ครบ กรุณาเลือกวันที่ และตรวจสอบข้อมูลอีกครั้ง");
+			alert(
+				"Incomplete information. Please select dates and verify the details."
+			);
 			return;
 		}
 
@@ -126,21 +135,20 @@ const Page = () => {
 			};
 
 			const delivery_address = {
-				residence_info: user.residence_info,
-				sub_district: user.sub_district,
-				district: user.district,
-				province: user.province,
-				postal_code: user.postal_code,
-				type: "delivery", // ต้องมี type ตาม backend ต้องการ
+				residence_info: user.address.residence_info,
+				sub_district: user.address.sub_district,
+				district: user.address.district,
+				province: user.address.province,
+				postal_code: user.address.postal_code,
+				type: "delivery",
 			};
 
 			const return_address = {
-				residence_info:
-					item.user_info.addresses[0]?.residence_info || "",
-				sub_district: item.user_info.addresses[0]?.sub_district || "",
-				district: item.user_info.addresses[0]?.district || "",
-				province: item.user_info.addresses[0]?.province || "",
-				postal_code: item.user_info.addresses[0]?.postal_code || "",
+				residence_info: ownerInfo?.address.residence_info || "",
+				sub_district: ownerInfo?.address.sub_district || "",
+				district: ownerInfo?.address.district || "",
+				province: ownerInfo?.address.province || "",
+				postal_code: ownerInfo?.address.postal_code || "",
 				type: "return",
 			};
 
@@ -161,11 +169,10 @@ const Page = () => {
 			}
 
 			const data = await response.json();
-			console.log("Rental created:", data);
 			window.location.href = `/rental/pending/${data.id}`;
 		} catch (error) {
 			console.error("Error creating rental:", error);
-			alert("ไม่สามารถส่งคำขอเช่าได้ กรุณาลองใหม่อีกครั้ง");
+			alert("Unable to submit the rental request. Please try again.");
 		}
 	};
 
@@ -177,14 +184,14 @@ const Page = () => {
 					<div className="flex flex-col w-full lg:w-1/3 gap-2 mt-8">
 						<img
 							className="rounded-t-lg aspect-square w-full object-cover"
-							src={`http://localhost:8787/${item?.images[0]}`}
+							src={`http://localhost:8787/${images[0]}`}
 							alt={item?.item_name}
 						/>
 						<h3 className="text-xl font-semibold">
 							{item?.item_name}
 						</h3>
 						<p className="text-sm text-gray-500">
-							รายละเอียดสินค้า : {item?.description}
+							Item Description: {item?.description}
 						</p>
 					</div>
 					<div className="flex flex-col gap-4 w-full lg:w-2/3">
@@ -195,27 +202,16 @@ const Page = () => {
 								</h3>
 								<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
 									<p>
-										ชื่อ-สกุล : {item?.user_info.first_name}{" "}
-										{item?.user_info.last_name}
+										Name: {ownerInfo?.first_name}{" "}
+										{ownerInfo?.last_name}
 									</p>
 									<p>
-										ที่อยู่จัดส่ง :{" "}
-										{
-											item?.user_info.addresses[0]
-												.residence_info
-										}
-										,{" "}
-										{
-											item?.user_info.addresses[0]
-												.sub_district
-										}
-										,{" "}
-										{item?.user_info.addresses[0].district},{" "}
-										{item?.user_info.addresses[0].province},{" "}
-										{
-											item?.user_info.addresses[0]
-												.postal_code
-										}
+										Return Address:{" "}
+										{ownerInfo?.address.residence_info},{" "}
+										{ownerInfo?.address.sub_district},{" "}
+										{ownerInfo?.address.district},{" "}
+										{ownerInfo?.address.province},{" "}
+										{ownerInfo?.address.postal_code}
 									</p>
 								</div>
 							</div>
@@ -223,18 +219,21 @@ const Page = () => {
 								<h3 className="text-xl font-semibold">
 									Renter{" "}
 									<span className="text-xs underline text-blue-500 cursor-pointer">
-										แก้ไข/เลือกที่อยู่จัดส่ง
+										Edit/Select Delivery Address
 									</span>
 								</h3>
 								<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
 									<p>
-										ชื่อ-สกุล : {user?.first_name}{" "}
+										Name: {user?.first_name}{" "}
 										{user?.last_name}
 									</p>
 									<p>
-										ที่อยู่จัดส่ง : {user?.residence_info},{" "}
-										{user?.sub_district}, {user?.district},{" "}
-										{user?.province}, {user?.postal_code}
+										Delivery Address:{" "}
+										{user?.address.residence_info},{" "}
+										{user?.address.sub_district},{" "}
+										{user?.address.district},{" "}
+										{user?.address.province},{" "}
+										{user?.address.postal_code}
 									</p>
 								</div>
 							</div>
@@ -243,28 +242,18 @@ const Page = () => {
 							<h3 className="text-xl font-semibold">Renting</h3>
 							<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
 								<p>
-									ตั้งแต่วันที่ :{" "}
-									{formatThaiDate(
-										startDate?.toISOString() || ""
-									)}
+									From Date:{" "}
+									{formatDate(startDate?.toISOString() || "")}
 								</p>
 								<p>
-									ถึงวันที่ :{" "}
-									{formatThaiDate(
-										endDate?.toISOString() || ""
-									)}
+									To Date:{" "}
+									{formatDate(endDate?.toISOString() || "")}
 								</p>
-								<p>
-									เงื่อนไขและข้อตกลงการเช่า :{" "}
-									{item?.rental_terms}
-								</p>
-								<p>
-									เงื่อนไขและข้อตกลงการปรับ :{" "}
-									{item?.penalty_terms}
-								</p>
+								<p>Rental Terms: {item?.rental_terms}</p>
+								<p>Penalty Terms: {item?.penalty_terms}</p>
 								<div className="flex justify-between font-bold border-t pt-2">
-									<span>รวม</span>
-									<span>{total} บาท</span>
+									<span>Total</span>
+									<span>{total} THB</span>
 								</div>
 								<div className="mt-4 space-y-2 text-sm">
 									<div>
@@ -274,7 +263,7 @@ const Page = () => {
 											className="mr-2"
 										/>
 										<label htmlFor="terms">
-											ยอมรับเงื่อนไขและข้อตกลงในการเช่า
+											Accept rental terms and conditions
 										</label>
 									</div>
 									<div>
@@ -284,7 +273,7 @@ const Page = () => {
 											className="mr-2"
 										/>
 										<label htmlFor="condition">
-											ยอมรับเงื่อนไขและข้อตกลงในการปรับ
+											Accept penalty terms and conditions
 										</label>
 									</div>
 								</div>
@@ -293,7 +282,7 @@ const Page = () => {
 						<div className="flex justify-end">
 							<button
 								onClick={createRental}
-								className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90"
+								className="bg-gray-700 text-white px-6 py-2 rounded-lg"
 							>
 								Submit Request
 							</button>

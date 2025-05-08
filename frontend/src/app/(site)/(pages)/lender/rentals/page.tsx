@@ -1,52 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabItem, Card, Button } from "flowbite-react";
 import Link from "next/link";
 
 import { useSession } from "@/lib/auth-client";
 
-type RentalItem = {
-	description: string;
-	id: string;
-	name: string;
-	store: string;
-	price: number;
-	status: string;
-	image: string;
-	actions?: { label: string; href?: string; onClick?: () => void }[];
-};
-
-const mapStatus = (rentalStatus: string, paymentStatus?: string): string => {
+const mapStatus = (rentalStatus: string): string => {
 	switch (rentalStatus) {
 		case "pending":
 			return "Request Pending";
-		case "accepted": {
-			if (paymentStatus === "Pending") return "Request Approved";
-			if (paymentStatus === "Paid") return "Paid";
-			return "Currently Rented";
-		}
+		case "approved":
+			return "Request Approved";
+		case "paid":
+			return "Renting";
 		case "completed":
 			return "Completed";
-		case "cancel":
+		case "cancelled":
 			return "Cancelled";
 		default:
 			return "Unknown Status";
 	}
 };
 
-const mapActions = (status: string, id: string) => {
-	switch (status) {
+const mapActions = (rentalStatus: string, id: string) => {
+	switch (rentalStatus) {
 		case "Request Pending":
 			return [{ label: "Accept/Reject", href: `/lender/rental/${id}` }];
 		case "Request Approved":
 			return [{ label: "Waiting for Payment" }];
-		case "Paid":
-			return [{ label: "View Details", href: `/lender/rental/${id}` }];
-		case "Currently Rented":
-			return [{ label: "View Details", href: `/lender/rental/${id}` }];
+		case "Renting":
+			return [{ label: "Item Returned", href: `/lender/rental/${id}` }];
 		case "Completed":
-			return [{ label: "View Details", href: `/lender/rental/${id}` }];
 		case "Cancelled":
 			return [{ label: "View Details", href: `/lender/rental/${id}` }];
 		default:
@@ -57,13 +42,12 @@ const mapActions = (status: string, id: string) => {
 const statusGroups: Record<string, (s: string) => boolean> = {
 	all: () => true,
 	request: (s) => s === "Request Pending",
-	current: (s) =>
-		["Request Approved", "Paid", "Currently Rented"].includes(s),
+	current: (s) => ["Request Approved", "Paid"].includes(s),
 	completed: (s) => s === "Completed",
 	cancelled: (s) => s === "Cancelled",
 };
 
-const RentalCard = ({ rental }: { rental: RentalItem }) => (
+const RentalCard = ({ rental }: { rental: any }) => (
 	<Card className="mb-4">
 		<div className="flex gap-4">
 			<div className="w-24 h-24 bg-gray-100 flex items-center justify-center">
@@ -84,10 +68,10 @@ const RentalCard = ({ rental }: { rental: RentalItem }) => (
 			<div className="flex flex-col justify-between text-right items-end gap-1">
 				<span className="text-sm text-gray-600">{rental.status}</span>
 				<span className="text-lg font-bold">
-					{rental.price.toLocaleString()} THB
+					{parseFloat(rental.price).toLocaleString()} THB
 				</span>
 				<div className="flex flex-wrap gap-1 justify-end">
-					{rental.actions?.map((action, i) =>
+					{rental.actions?.map((action: any, i: number) =>
 						action.href ? (
 							<Link key={i} href={action.href}>
 								<Button size="xs" color="gray">
@@ -106,16 +90,8 @@ const RentalCard = ({ rental }: { rental: RentalItem }) => (
 	</Card>
 );
 
-const ScrollableRentalList = ({
-	rentals,
-	search,
-	setSearch,
-}: {
-	rentals: RentalItem[];
-	search: string;
-	setSearch: (v: string) => void;
-}) => (
-	<div className="max-w-5xl mx-auto p-6 bg-white rounded-lg shadow">
+const ScrollableRentalList = ({ rentals, search, setSearch }: any) => (
+	<div className="p-6 bg-white rounded-lg shadow">
 		<div className="mb-4">
 			<input
 				type="text"
@@ -127,7 +103,7 @@ const ScrollableRentalList = ({
 		</div>
 		<div className="bg-white rounded-lg max-h-[600px] overflow-y-auto space-y-4 h-[600px]">
 			{rentals.length ? (
-				rentals.map((r) => <RentalCard key={r.id} rental={r} />)
+				rentals.map((r: any) => <RentalCard key={r.id} rental={r} />)
 			) : (
 				<div className="flex items-center justify-center h-full">
 					<p className="text-gray-500 text-lg">No records found</p>
@@ -138,9 +114,9 @@ const ScrollableRentalList = ({
 );
 
 const Page = () => {
-	const [rentalsData, setRentalsData] = useState<RentalItem[]>([]);
+	const [rentalsData, setRentalsData] = useState<any[]>([]);
 	const [search, setSearch] = useState("");
-
+	const [loading, setLoading] = useState(true);
 	const session = useSession();
 
 	useEffect(() => {
@@ -148,15 +124,14 @@ const Page = () => {
 			if (!session?.data?.user.id) return;
 			try {
 				const res = await fetch(
-					`/api/rental/user/lessor/${session.data.user.id}`
+					`/api/rental/lessor/${session.data.user.id}`
 				);
 				const data = await res.json();
-				console.log("Fetched rentals:", data);
 
 				const rentals = data.map((r: any) => {
-					const status = mapStatus(r.status, r.payment?.status);
+					const status = mapStatus(r.rental?.status);
 					return {
-						id: r.id,
+						id: r.rental?.id,
 						name: r.item?.item_name || "Unnamed Product",
 						description: r.item?.description || "No description",
 						store: r.lessor_info?.first_name || "Unknown Store",
@@ -168,9 +143,10 @@ const Page = () => {
 						image: r.item?.images?.[0]
 							? `http://localhost:8787/${r.item.images[0]}`
 							: "",
-						actions: mapActions(status, r.id),
+						actions: mapActions(status, r.rental?.id),
 					};
 				});
+				setLoading(false);
 
 				setRentalsData(rentals);
 			} catch (error) {
@@ -184,10 +160,16 @@ const Page = () => {
 	const filteredByTab = (predicate: (s: string) => boolean) =>
 		rentalsData
 			.filter((r) => predicate(r.status))
-			.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
+			.filter(
+				(r) =>
+					typeof r.name === "string" &&
+					r.name.toLowerCase().includes(search.toLowerCase())
+			);
+
+	if (loading) return <div className="text-center py-20">Loading...</div>;
 
 	return (
-		<>
+		<main className="max-w-5xl mx-auto">
 			<h1 className="text-2xl font-bold mb-4">Rental Management</h1>
 			<Tabs aria-label="Rental Management Tabs">
 				<TabItem title="All">
@@ -226,7 +208,7 @@ const Page = () => {
 					/>
 				</TabItem>
 			</Tabs>
-		</>
+		</main>
 	);
 };
 

@@ -8,5 +8,5 @@ export interface ItemReviewType {
 	rating: number; // INT(0-5), คะแนนรีวิว
 	created_at: string; // TIMESTAMPTZ, วันที่สร้าง (format: YYYY-MM-DD HH:MI:SS)
 	updated_at: string; // TIMESTAMPTZ, วันที่อัปเดต (format: YYYY-MM-DD HH:MI:SS)
-	item_review_images: ItemReviewImageType[] | []; // รูปภาพรีวิว
+	images: string[]; // รูปภาพรีวิว
 }

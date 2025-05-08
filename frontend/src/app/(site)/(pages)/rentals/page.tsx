@@ -1,18 +1,8 @@
 "use client";
 
-import {
-	useState,
-	useEffect,
-	JSXElementConstructor,
-	Key,
-	MouseEventHandler,
-	ReactElement,
-	ReactNode,
-	ReactPortal,
-} from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabItem, Card, Button } from "flowbite-react";
 import Link from "next/link";
-
 import { useSession } from "@/lib/auth-client";
 import { UrlObject } from "url";
 
@@ -23,40 +13,47 @@ const getDuration = (start: string, end: string): string => {
 	const diff = Math.ceil(
 		(endDate.getTime() - startDate.getTime()) / 86_400_000
 	);
-	return `${diff} วัน`;
+	return `${diff} days`;
 };
 
-const mapStatus = (rentalStatus: string, paymentStatus?: string): string => {
-	if (rentalStatus === "pending") return "รอผู้ปล่อยเช่ายืนยัน";
-	if (rentalStatus === "accepted" && paymentStatus === "pending")
-		return "ผู้ปล่อยเช่ายืนยันแล้ว";
-	if (rentalStatus === "accepted" && paymentStatus === "completed")
-		return "เช่าอยู่";
-	if (rentalStatus === "cancel") return "ยกเลิกแล้ว";
-	if (rentalStatus === "completed") return "เช่าสำเร็จแล้ว";
-	if (paymentStatus === "failed") return "มีค่าปรับที่ต้องชำระ";
-	return "ไม่ทราบสถานะ";
+const mapStatus = (rentalStatus: string): string => {
+	switch (rentalStatus) {
+		case "pending":
+			return "Request Pending";
+		case "approved":
+			return "Request Approved";
+		case "paid":
+			return "Renting";
+		case "completed":
+			return "Completed";
+		case "cancelled":
+			return "Cancelled";
+		default:
+			return "Unknown Status";
+	}
 };
 
-const mapActions = (status: string, id: string, rating?: number) => {
+const mapActions = (status: string, id: string) => {
 	switch (status) {
-		case "รอผู้ปล่อยเช่ายืนยัน":
-			return [{ label: "ยกเลิก", href: `/rental/confirm/${id}` }];
-		case "ผู้ปล่อยเช่ายืนยันแล้ว":
-			return [{ label: "ชำระเงิน", href: `/rental/payment/${id}` }];
+		case "Request Pending":
+			return [{ label: "Cancel", href: `/rental/pending/${id}` }];
+		case "Request Approved":
+			return [{ label: "Pay Now", href: `/rental/payment/${id}` }];
+		case "Renting":
+		case "Completed":
+		case "Cancelled":
+			return [{ label: "View Details", href: `/rental/${id}` }];
 		default:
 			return [];
 	}
 };
 
-const statusGroups = {
+const statusGroups: Record<string, (s: string) => boolean> = {
 	all: () => true,
-	request: (s: string) => s === "รอผู้ปล่อยเช่ายืนยัน",
-	current: (s: string) => ["ผู้ปล่อยเช่ายืนยันแล้ว", "เช่าอยู่"].includes(s),
-	returning: (s: string) => s === "จัดส่งคืนแล้ว",
-	completed: (s: string) => s === "เช่าสำเร็จแล้ว",
-	cancelled: (s: string) => s === "ยกเลิกแล้ว",
-	penalty: (s: string) => s === "มีค่าปรับที่ต้องชำระ",
+	request: (s) => s === "Request Pending",
+	current: (s) => ["Request Approved", "Paid"].includes(s),
+	completed: (s) => s === "Completed",
+	cancelled: (s) => s === "Cancelled",
 };
 
 const RentalCard = ({ rental }: { rental: any }) => (
@@ -66,80 +63,36 @@ const RentalCard = ({ rental }: { rental: any }) => (
 				<img
 					className="rounded-t-lg aspect-square w-full object-cover"
 					src={`http://localhost:8787/${rental?.image}`}
-					alt={rental?.sname}
+					alt={rental?.name}
 				/>
 			</div>
 			<div className="flex-1">
 				<h5 className="text-lg font-semibold">{rental.name}</h5>
-				<p className="text-sm">ตั้งแต่: {rental.startDate}</p>
-				<p className="text-sm">ถึง: {rental.endDate}</p>
-				<p className="text-sm">ระยะเวลา: {rental.duration}</p>
-				<Link
-					href={`/rental/${rental.id}`}
-					className="text-sm underline text-gray-500 hover:text-black"
-				>
-					ดูรายละเอียด
-				</Link>
+				<p className="text-sm">From: {rental.startDate}</p>
+				<p className="text-sm">To: {rental.endDate}</p>
+				<p className="text-sm">Duration: {rental.duration}</p>
 			</div>
 			<div className="flex flex-col justify-between items-end gap-1">
 				<span className="text-sm text-gray-600">{rental.status}</span>
 				<span className="text-lg font-bold">
-					{rental.price.toLocaleString()} บาท
+					{rental.price.toLocaleString()} THB
 				</span>
 				<div className="flex flex-wrap gap-1 justify-end">
-					{rental.actions.map(
-						(
-							action: {
-								href: string | UrlObject;
-								label:
-									| string
-									| number
-									| bigint
-									| boolean
-									| ReactElement<
-											unknown,
-											string | JSXElementConstructor<any>
-									  >
-									| Iterable<ReactNode>
-									| Promise<
-											| string
-											| number
-											| bigint
-											| boolean
-											| ReactPortal
-											| ReactElement<
-													unknown,
-													| string
-													| JSXElementConstructor<any>
-											  >
-											| Iterable<ReactNode>
-											| null
-											| undefined
-									  >
-									| null
-									| undefined;
-								onClick:
-									| MouseEventHandler<HTMLButtonElement>
-									| undefined;
-							},
-							i: Key | null | undefined
-						) =>
-							action.href ? (
-								<Link key={i} href={action.href}>
-									<Button size="xs" color="gray">
-										{action.label}
-									</Button>
-								</Link>
-							) : (
-								<Button
-									key={i}
-									size="xs"
-									color="gray"
-									onClick={action.onClick}
-								>
+					{rental.actions.map((action: any, i: number) =>
+						action.href ? (
+							<Link
+								key={i}
+								href={action.href as UrlObject | string}
+							>
+								<Button size="xs" color="gray">
 									{action.label}
 								</Button>
-							)
+							</Link>
+						) : (
+							<Button key={i} size="xs" color="gray" disabled>
+								{action.label}
+							</Button>
+						)
 					)}
 				</div>
 			</div>
@@ -160,7 +113,7 @@ const ScrollableRentalList = ({
 		<div className="p-4">
 			<input
 				type="text"
-				placeholder="ค้นหา..."
+				placeholder="Search..."
 				value={search}
 				onChange={(e) => setSearch(e.target.value)}
 				className="border border-gray-300 rounded-md p-2 w-[30%]"
@@ -171,7 +124,7 @@ const ScrollableRentalList = ({
 				rentals.map((r) => <RentalCard key={r.id} rental={r} />)
 			) : (
 				<div className="flex items-center justify-center h-full">
-					<p className="text-gray-500 text-lg">ไม่มีรายการ</p>
+					<p className="text-gray-500 text-lg">No rentals found</p>
 				</div>
 			)}
 		</div>
@@ -186,31 +139,42 @@ const Page = () => {
 	const session = useSession();
 
 	useEffect(() => {
+		if (!session?.data?.user.id) return;
 		const fetchRentals = async () => {
 			try {
 				const response = await fetch(
 					`/api/rental/user/${session?.data?.user.id}`
 				);
 				const data = await response.json();
-				console.log("Fetched rentals:", data);
 
-				const mapped = data.map((r: any) => ({
-					id: r.id,
-					name: r.item?.item_name || "ชื่อสินค้า",
-					store: r.lessor_info?.first_name || "ชื่อร้าน",
-					startDate: formatThaiDate(r.start_date) ?? "-",
-					endDate: formatThaiDate(r.end_date) ?? "-",
-					duration: getDuration(r.start_date, r.end_date),
-					price: r.payment?.total_price ?? 0,
-					status: mapStatus(r.status, r.payment?.status),
-					image: r.item?.images?.[0] || "",
-					rating: 0,
-					actions: mapActions(
-						mapStatus(r.status, r.payment?.status),
-						r.id,
-						0
-					),
-				}));
+				const mapped = data.map((r: any) => {
+					const status = mapStatus(r.rental?.status);
+					return {
+						id: r.rental?.id,
+						name: r.item?.item_name || "Unnamed Product",
+						description: r.item?.description || "No description",
+						store: `${r.lessor_info?.first_name || "Unknown"} ${
+							r.lessor_info?.last_name || ""
+						}`.trim(),
+						price:
+							r.payment?.total_price ??
+							r.item?.price_per_day ??
+							0,
+						status,
+						image: r.item.images[0],
+						duration: getDuration(
+							r.rental?.start_date,
+							r.rental?.end_date
+						),
+						startDate: new Date(
+							r.rental?.start_date
+						).toLocaleDateString(),
+						endDate: new Date(
+							r.rental?.end_date
+						).toLocaleDateString(),
+						actions: mapActions(status, r.rental?.id),
+					};
+				});
 
 				setRentalsData(mapped);
 			} catch (error) {
@@ -227,15 +191,6 @@ const Page = () => {
 		rentalsData
 			.filter((r) => predicate(r.status))
 			.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
-
-	const formatThaiDate = (d: string) =>
-		new Date(d).toLocaleString("th-TH", {
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
 
 	if (loading) return <div className="text-center p-10">Loading...</div>;
 
@@ -264,13 +219,6 @@ const Page = () => {
 						setSearch={setSearch}
 					/>
 				</TabItem>
-				{/* <TabItem title="Being Returned">
-					<ScrollableRentalList
-						rentals={filteredByTab(statusGroups.returning)}
-						search={search}
-						setSearch={setSearch}
-					/>
-				</TabItem> */}
 				<TabItem title="Rental Completed">
 					<ScrollableRentalList
 						rentals={filteredByTab(statusGroups.completed)}
@@ -285,13 +233,6 @@ const Page = () => {
 						setSearch={setSearch}
 					/>
 				</TabItem>
-				{/* <TabItem title="Penalty">
-					<ScrollableRentalList
-						rentals={filteredByTab(statusGroups.penalty)}
-						search={search}
-						setSearch={setSearch}
-					/>
-				</TabItem> */}
 			</Tabs>
 		</div>
 	);

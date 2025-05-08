@@ -7,45 +7,45 @@ import Step from "@/components/Rental/step";
 
 import Header from "@/components/Header";
 
+import { RentalType } from "@/types/rental";
+import { PaymentType } from "@/types/payment";
+import { ItemType } from "@/types/item";
+import { UserType } from "@/types/user";
+import { AddressType } from "@/types/address";
+
 import { useSession } from "@/lib/auth-client";
 
 const Page = () => {
 	const { rentalId } = useParams();
 	const session = useSession();
 
-	const [item, setItem] = useState<any>(null);
-	const [lender, setLender] = useState<any>(null);
-	const [renter, setRenter] = useState<any>(null);
+	const [rental, setRental] = useState<RentalType>();
+	const [payment, setPayment] = useState<PaymentType>();
+	const [item, setItem] = useState<ItemType>();
+	const [lessor, setLessor] = useState<UserType>();
+	const [renter, setRenter] = useState<UserType>();
+	const [deliveryAddress, setDeliveryAddress] = useState<AddressType>();
+	const [returnAddress, setReturnAddress] = useState<AddressType>();
 	const [loading, setLoading] = useState(true);
-	const [payment, setPayment] = useState<any>(null);
 	const [selectedMethod, setSelectedMethod] = useState<string>("ThaiQR");
 	const [phoneNumber, setPhoneNumber] = useState<string>("");
 
 	useEffect(() => {
 		const fetchRental = async () => {
 			try {
-				const rentalResponse = await fetch(`/api/rental/${rentalId}`);
-				const rentalData = await rentalResponse.json();
-				console.log("Fetched item:", rentalData);
-				setPayment(rentalData.payment);
-				const itemResponse = await fetch(
-					`/api/item/${rentalData.item_id}`
-				);
-				const itemData = await itemResponse.json();
-				setItem(itemData);
+				const res = await fetch(`/api/rental/${rentalId}`);
+				if (!res.ok) throw new Error("Failed to fetch rental data");
+				const data = await res.json();
 
-				setLender(itemData.user_info);
-
-				if (session?.data?.user) {
-					const userResponse = await fetch(
-						`/api/user/info/${session?.data?.user.id}`
-					);
-					const userData = await userResponse.json();
-					setRenter(userData);
-				}
+				setRental(data.rental);
+				setPayment(data.payment);
+				setItem(data.item);
+				setLessor(data.lessor_info);
+				setRenter(data.renter_info);
+				setDeliveryAddress(data.delivery_address);
+				setReturnAddress(data.return_address);
 			} catch (error) {
-				console.error("Error fetching rental data:", error);
-				notFound();
+				console.error(error);
 			} finally {
 				setLoading(false);
 			}
@@ -54,7 +54,7 @@ const Page = () => {
 		if (rentalId) {
 			fetchRental();
 		}
-	}, [rentalId, session]);
+	}, [rentalId]);
 
 	if (loading) return <div>Loading...</div>;
 
@@ -69,13 +69,6 @@ const Page = () => {
 	];
 
 	const proceed = async () => {
-		console.log(
-			"Selected method:",
-			selectedMethod,
-			"Phone number:",
-			phoneNumber
-		);
-
 		try {
 			const updatedRental = await fetch(
 				`/api/rental/${rentalId}/status`,
@@ -84,7 +77,7 @@ const Page = () => {
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ status: "completed" }),
+					body: JSON.stringify({ status: "paid" }),
 				}
 			).then((res) => res.json());
 			window.location.href = `/rental/success/${rentalId}`;
@@ -102,8 +95,8 @@ const Page = () => {
 					<h1 className="text-2xl font-semibold mb-6">Rental Fee</h1>
 					<div className="flex gap-2 items-start">
 						<img
-							src={`http://localhost:8787/${item.images[0]}`}
-							alt={item?.name}
+							src={`http://localhost:8787/${item?.images[0]}`}
+							alt={item?.item_name}
 							className="w-14 h-14 rounded-lg object-cover"
 						/>
 						<div>
@@ -113,8 +106,8 @@ const Page = () => {
 								{renter?.last_name}
 							</p>
 							<p className="text-xs text-gray-500">
-								ผู้ให้เช่า : {lender?.first_name}{" "}
-								{lender?.last_name}
+								ผู้ให้เช่า : {lessor?.first_name}{" "}
+								{lessor?.last_name}
 							</p>
 						</div>
 					</div>
@@ -264,7 +257,7 @@ const Page = () => {
 				<div className="text-center">
 					<button
 						onClick={proceed}
-						className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90"
+						className="bg-gray-700 text-white px-6 py-2 rounded-lg"
 					>
 						Proceed
 					</button>

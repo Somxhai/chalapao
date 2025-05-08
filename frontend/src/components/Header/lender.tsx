@@ -42,7 +42,6 @@ const Header = ({ children }: HeaderProps) => {
 					}
 					const data = await response.json();
 					setUser(data);
-					console.log("Fetched user:", data);
 				} catch (error) {
 					console.error("Error fetching user info:", error);
 				}
@@ -215,8 +214,6 @@ const Header = ({ children }: HeaderProps) => {
 						<DropdownItem onClick={() => signOutBtn()}>
 							Sign Out
 						</DropdownItem>
-						{/* <DropdownItem>Sign In</DropdownItem>
-                                    <DropdownItem>Sign Up</DropdownItem> */}
 					</Dropdown>
 
 					<NavbarToggle />

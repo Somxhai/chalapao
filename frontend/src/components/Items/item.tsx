@@ -1,6 +1,12 @@
 import { ItemType } from "@/types/item";
 
-export default function ItemList({ item }: { item: ItemType }) {
+export default function ItemCard({
+	item,
+	image,
+}: {
+	item: ItemType;
+	image: string;
+}) {
 	return (
 		<a
 			href={`/item/${item.id}`}
@@ -28,8 +34,8 @@ export default function ItemList({ item }: { item: ItemType }) {
 				</span>
 			</div>
 			<img
-				className="rounded-t-lg aspect-square w-full object-cover"
-				src={`http://localhost:8787/${item.images[0]}`}
+				className="rounded-lg aspect-square w-full object-cover"
+				src={`http://localhost:8787/${image}`}
 				alt={item.item_name}
 			/>
 			<h5 className="text-xl font-semibold tracking-tight dark:text-white line-clamp-2">
