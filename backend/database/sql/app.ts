@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS rental (
     return_address UUID NOT NULL,
 
     payment_id UUID NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'cancel')),
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'paid', 'completed', 'cancelled')),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS
     penalty_terms TEXT NOT NULL,
     item_status TEXT NOT NULL CHECK (item_status IN ('available', 'rented', 'unavailable')),
     price_per_day NUMERIC NOT NULL,
-    category_id UUID NOT NULL,
+    category_id UUID,
     item_rating INT DEFAULT 0 CHECK (item_rating BETWEEN 0 AND 5),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS
 
 export const CREATE_REVIEW_ITEM_TABLE = `
 CREATE TABLE IF NOT EXISTS
-  "review" (
+  "review_item" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     reviewer_id UUID NOT NULL,
     item_id UUID NOT NULL,
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS
 
 export const CREATE_REVIEW_USER_TABLE = `
 CREATE TABLE IF NOT EXISTS
-  "review" (
+  "review_user" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     reviewer_id UUID NOT NULL,
     user_id UUID NOT NULL,
@@ -114,16 +114,6 @@ CREATE TABLE IF NOT EXISTS
 
     CONSTRAINT target_user_review FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT review_by FOREIGN KEY (reviewer_id) REFERENCES "user"(id) ON DELETE CASCADE
-  );
-`;
-
-export const CREATE_REVIEW_IMAGE_TABLE = `
-CREATE TABLE IF NOT EXISTS
-  "review_image" (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    review_id UUID NOT NULL,
-    image_url TEXT NOT NULL,
-    CONSTRAINT image_for FOREIGN KEY (review_id) REFERENCES "review"(id) ON DELETE CASCADE
   );
 `;
 
@@ -140,7 +130,26 @@ CREATE TABLE IF NOT EXISTS
   "item_image"(
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     item_id UUID NOT NULL,
-    image_url TEXT NOT NULL,
+    path TEXT NOT NULL,
     CONSTRAINT image_for FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE
   )
+`;
+
+export const CREATE_REVIEW_IMAGE_TABLE = `
+CREATE TABLE IF NOT EXISTS
+  "review_item_image" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    review_id UUID NOT NULL,
+    path TEXT NOT NULL,
+    CONSTRAINT image_for FOREIGN KEY (review_id) REFERENCES "review_item"(id) ON DELETE CASCADE
+  );
+`;
+
+export const CREATE_REVIEW_USER_IMAGE_TABLE = `
+    CREATE TABLE IF NOT EXISTS "review_user_image" (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    review_id UUID NOT NULL,
+    path TEXT NOT NULL,
+    CONSTRAINT image_for FOREIGN KEY (review_id) REFERENCES "review_user"(id) ON DELETE CASCADE
+)
 `;

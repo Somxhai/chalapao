@@ -2,18 +2,16 @@ export const CREATE_USER_TABLE = `
 CREATE TABLE IF NOT EXISTS
   "user" (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
-    user_info_id UUID,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     email_verified BOOLEAN NULL DEFAULT false,
     user_image TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    user_type TEXT NOT NULL DEFAULT 'renter' CHECK (user_type IN ('renter', 'lessor')),
+    user_type TEXT NOT NULL DEFAULT 'renter' CHECK (user_type IN ('renter', 'lessor', 'admin')),
 
     CONSTRAINT user_pkey PRIMARY KEY (id),
-    CONSTRAINT user_email_unique UNIQUE (email),
-    CONSTRAINT has FOREIGN KEY (user_info_id) REFERENCES "user_info"(id) ON DELETE CASCADE
+    CONSTRAINT user_email_unique UNIQUE (email)
   );
 `;
 
