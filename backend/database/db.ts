@@ -1,16 +1,17 @@
-import { ClientOptions, Pool } from "postgres";
+// db/setup.ts
+import pg from "npm:pg";
 
-const POOL_CONNECTIONS = 20;
+const { Pool } = pg;
+import { setupDatabase } from "../lib/db.ts";
 
-const dbParams: ClientOptions = {
-  database: Deno.env.get("DATABASE") || "postgres",
-  hostname: Deno.env.get("DB_HOST_NAME") || "localhost",
-  password: Deno.env.get("DB_PASSWORD") || "",
-  user: Deno.env.get("DB_USER") || "postgres",
-};
+export const pool = new Pool({
+	host: Deno.env.get("PGHOST") || "localhost",
+	port: parseInt(Deno.env.get("PGPORT") || "5439"),
+	user: Deno.env.get("PGUSERNAME") || "postgres",
+	password: Deno.env.get("PGPASSWORD") || "",
+	database: Deno.env.get("PGDATABASE") || "postgres",
+});
 
-export const pool = new Pool(
-  dbParams,
-  POOL_CONNECTIONS,
-  true,
-);
+const client = await pool.connect();
+
+await setupDatabase(client);
