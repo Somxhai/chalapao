@@ -1,0 +1,24 @@
+
+name: New Feature request
+description: File a feature request.
+title: "Feature: "
+labels: ["feature"]
+assignees:
+  - somxhai
+body:
+  - type: textarea
+    id: describe-feature
+    attributes:
+      label: Describe the problem
+      description: Describe the problem or the feature you want to see.
+    validations:
+      required: false
+  - type: textarea
+    id: expect-feature
+    attributes:
+      label: What do you expect to happen?
+      description: Explain the expected behavior or how the feature should work.
+    validations:
+      required: false
+
+
