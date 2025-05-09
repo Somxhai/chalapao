@@ -20,7 +20,7 @@ export interface UserInfo {
 export interface Address {
   id?: string;
   user_id: string;
-  is_primary: boolean;
+  is_primary?: boolean;
   residence_info: string;
   sub_district: string;
   district: string;
