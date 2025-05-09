@@ -14,5 +14,36 @@ services:
     networks:
       - chalapao-network
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - chalapao-network
+    environment:
+      - PORT=8000
+      - PGHOST=postgres
+    env_file:
+      - backend/.env
+    depends_on:
+      - postgresql
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - chalapao-network
+    depends_on:
+      - backend
+    environment:
+      - DATABASE_URL=postgres://server:pookiebear@postgres:5439/chalapao
+      - BACKEND_URL=http://backend:8000
+    env_file:
+      - frontend/.env
 
 
