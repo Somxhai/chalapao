@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, Key } from "react";
+import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
+import Image from "next/image";
 
 import { Carousel } from "flowbite-react";
 
@@ -70,10 +71,12 @@ const Page = () => {
 					<Carousel slide={false}>
 						{images.map((img, i) => (
 							<div key={i} className="w-full h-full">
-								<img
+								<Image
 									className="rounded-t-lg aspect-square w-full object-cover"
-									src={`http://localhost:8787/${img}`}
-									alt={item?.item_name}
+									src={`/api/${img}`}
+									alt={item?.item_name ?? "Item Image"}
+									width={500}
+									height={500}
 								/>
 							</div>
 						))}
@@ -268,9 +271,11 @@ const Page = () => {
 							{review.images && review.images.length > 0 && (
 								<div className="flex gap-2 mt-2">
 									{review.images.map((img, i) => (
-										<img
+										<Image
 											key={i}
-											src={`http://localhost:8787/${img}`}
+											src={`/api/${img}`}
+											width={64}
+											height={64}
 											alt={`Review Image ${i + 1}`}
 											className="w-16 h-16 object-cover rounded-lg"
 										/>

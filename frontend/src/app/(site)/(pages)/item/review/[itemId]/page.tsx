@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import { ItemType } from "@/types/item";
 
 const Page = () => {
 	const { itemId } = useParams<{ itemId: string }>();
 	const router = useRouter();
 
 	const [loading, setLoading] = useState(true);
-	const [item, setItem] = useState<any>(null);
+	const [item, setItem] = useState<ItemType>();
 	const [itemRating, setItemRating] = useState(0);
 	const [ownerRating, setOwnerRating] = useState(0);
 	const [description, setDescription] = useState("");
@@ -88,13 +90,15 @@ const Page = () => {
 			<h1 className="text-2xl font-semibold">Review</h1>
 			<div className="flex flex-col md:flex-row gap-6">
 				<div className="flex-shrink-0 w-full md:w-1/2">
-					<img
+					<Image
 						className="rounded-lg aspect-square w-full object-cover"
 						src={
 							item.images?.[0]
-								? `http://localhost:8787/${item.images[0]}`
-								: "/default-image.png"
+								? `/api/${item.images[0]}`
+								: ""
 						}
+						width={500}
+						height={500}
 						alt={item?.item_name}
 					/>
 				</div>

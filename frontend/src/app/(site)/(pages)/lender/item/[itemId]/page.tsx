@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
+
+import { CategoryType } from "@/types/category";
 
 const Page = () => {
 	const { itemId } = useParams<{ itemId?: string }>();
@@ -20,7 +23,7 @@ const Page = () => {
 		images: [] as (string | File)[],
 	});
 	const [loading, setLoading] = useState(true);
-	const [categories, setCategories] = useState<any[]>([]);
+	const [categories, setCategories] = useState<CategoryType[]>([]);
 
 	const handleChange = (
 		e: React.ChangeEvent<
@@ -92,7 +95,7 @@ const Page = () => {
 				throw new Error("Failed to save item");
 			}
 
-			const data = await response.json();
+			await response.json();
 			router.push("/lender/items");
 		} catch (error) {
 			console.error("Error saving item:", error);
@@ -167,16 +170,20 @@ const Page = () => {
 				<div className="flex flex-col items-center">
 					{form.images.length > 0 ? (
 						typeof form.images[0] === "string" ? (
-							<img
-								src={`http://localhost:8787/${form.images[0]}`}
+							<Image
+								src={`/api/${form.images[0]}`}
+								width={128}
+								height={128}
 								alt="Product"
 								className="w-32 h-32 object-cover rounded-lg mb-2"
 							/>
 						) : (
-							<img
+							<Image
 								src={URL.createObjectURL(
 									form.images[0] as File
 								)}
+								width={128}
+								height={128}
 								alt="Selected preview"
 								className="w-32 h-32 object-cover rounded-lg mb-2"
 							/>

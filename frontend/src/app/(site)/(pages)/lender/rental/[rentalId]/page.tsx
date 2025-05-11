@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, notFound, useRouter } from "next/navigation";
+import Image from "next/image";
 
 import { RentalType } from "@/types/rental";
 import { PaymentType } from "@/types/payment";
@@ -57,6 +58,8 @@ const Page = () => {
 				if (!res.ok) throw new Error("Failed to fetch rental data");
 				const data = await res.json();
 
+				console.log("Fetched rental data:", data);
+
 				setRental(data.rental);
 				setPayment(data.payment);
 				setItem(data.item);
@@ -103,9 +106,7 @@ const Page = () => {
 			? `${addr.residence_info}, ${addr.sub_district}, ${addr.district}, ${addr.province}, ${addr.postal_code}`
 			: "-";
 
-	const imageUrl = item.images?.[0]
-		? `http://localhost:8787/${item.images[0]}`
-		: "";
+	const imageUrl = item.images?.[0] ? `/api/${item.images[0]}` : "";
 
 	const actions: Action[] =
 		rental.status === "pending"
@@ -187,8 +188,10 @@ const Page = () => {
 					<p className="text-lg font-semibold text-right">{status}</p>
 					<div className="w-full flex justify-center">
 						{imageUrl ? (
-							<img
+							<Image
 								src={imageUrl}
+								width={200}
+								height={200}
 								alt={item.item_name}
 								className="rounded-lg object-contain w-[200px] h-[200px]"
 							/>
@@ -200,8 +203,10 @@ const Page = () => {
 					<div className="border p-6 rounded-lg shadow mb-2">
 						<div className="flex gap-4 mb-2">
 							{imageUrl && (
-								<img
+								<Image
 									src={imageUrl}
+									width={200}
+									height={200}
 									alt={item.item_name}
 									className="w-16 h-16 object-cover rounded-lg"
 								/>

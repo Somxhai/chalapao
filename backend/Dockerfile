@@ -14,4 +14,5 @@ RUN deno cache main.ts
 FROM denoland/deno:latest
 WORKDIR /app
 COPY --from=builder /app .
-CMD ["deno", "run", "--allow-env", "--allow-net", "--allow-read", "--allow-write", "--env-file=.env", "main.ts"]
+CMD ["nc", "-zv", "postgresql", "5432"]
+CMD ["deno", "run", "--allow-env", "--allow-net", "--allow-read", "--allow-write", "main.ts"]

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { ThemeModeScript } from "flowbite-react";
 
 import "@/app/css/globals.css";
@@ -16,10 +17,8 @@ const RootLayout = ({
 }>) => {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<head>
-				<ThemeModeScript />
-			</head>
 			<body
+				suppressHydrationWarning
 				className={`antialiased vsc-initialized bg-[#f0f0f0] text-gray-900 dark:bg-gray-900 dark:text-white`}
 			>
 				{children}

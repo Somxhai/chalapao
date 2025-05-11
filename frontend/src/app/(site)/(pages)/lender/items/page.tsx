@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "@/lib/auth-client";
+import Image from "next/image";
+import Link from "next/link";
 
 import { ItemType } from "@/types/item";
 
@@ -138,12 +140,12 @@ const Page = () => {
 						Unavailable
 					</button>
 				</div>
-				<a
+				<Link
 					href="/lender/item/create"
 					className="bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-600"
 				>
 					Add New
-				</a>
+				</Link>
 			</div>
 
 			<div className="bg-white p-6 rounded-lg shadow-md w-full">
@@ -182,12 +184,14 @@ const Page = () => {
 							className="flex justify-between items-center border-t border-gray-200 py-4"
 						>
 							<div className="flex items-center gap-4">
-								<img
+								<Image
 									src={
 										item.images?.[0]
-											? `http://localhost:8787/${item.images[0]}`
+											? `/api/${item.images[0]}`
 											: `https://placehold.co/64x64?text=${item.item_name}`
 									}
+									width={64}
+									height={64}
 									alt={item.item_name}
 									className="w-16 h-16 object-cover rounded-lg"
 								/>
@@ -234,12 +238,12 @@ const Page = () => {
 									>
 										Delete
 									</button>
-									<a
+									<Link
 										href={`/lender/item/${item.id}`}
 										className="bg-gray-700 text-white px-6 py-2 rounded-lg"
 									>
 										Edit
-									</a>
+									</Link>
 								</div>
 							</div>
 						</div>

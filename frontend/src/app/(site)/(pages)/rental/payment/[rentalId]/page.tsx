@@ -1,31 +1,24 @@
 "use client";
 
 import { useState, useEffect, Fragment } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useParams } from "next/navigation";
+import Image from "next/image";
 
 import Step from "@/components/Rental/step";
 
 import Header from "@/components/Header";
 
-import { RentalType } from "@/types/rental";
 import { PaymentType } from "@/types/payment";
 import { ItemType } from "@/types/item";
 import { UserType } from "@/types/user";
-import { AddressType } from "@/types/address";
-
-import { useSession } from "@/lib/auth-client";
 
 const Page = () => {
 	const { rentalId } = useParams();
-	const session = useSession();
 
-	const [rental, setRental] = useState<RentalType>();
 	const [payment, setPayment] = useState<PaymentType>();
 	const [item, setItem] = useState<ItemType>();
 	const [lessor, setLessor] = useState<UserType>();
 	const [renter, setRenter] = useState<UserType>();
-	const [deliveryAddress, setDeliveryAddress] = useState<AddressType>();
-	const [returnAddress, setReturnAddress] = useState<AddressType>();
 	const [loading, setLoading] = useState(true);
 	const [selectedMethod, setSelectedMethod] = useState<string>("ThaiQR");
 	const [phoneNumber, setPhoneNumber] = useState<string>("");
@@ -37,13 +30,10 @@ const Page = () => {
 				if (!res.ok) throw new Error("Failed to fetch rental data");
 				const data = await res.json();
 
-				setRental(data.rental);
 				setPayment(data.payment);
 				setItem(data.item);
 				setLessor(data.lessor_info);
 				setRenter(data.renter_info);
-				setDeliveryAddress(data.delivery_address);
-				setReturnAddress(data.return_address);
 			} catch (error) {
 				console.error(error);
 			} finally {
@@ -70,16 +60,13 @@ const Page = () => {
 
 	const proceed = async () => {
 		try {
-			const updatedRental = await fetch(
-				`/api/rental/${rentalId}/status`,
-				{
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ status: "paid" }),
-				}
-			).then((res) => res.json());
+			await fetch(`/api/rental/${rentalId}/status`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ status: "paid" }),
+			}).then((res) => res.json());
 			window.location.href = `/rental/success/${rentalId}`;
 		} catch (error) {
 			console.error("Error cancelling rental:", error);
@@ -94,9 +81,11 @@ const Page = () => {
 				<div className="max-w-xs mx-auto bg-white shadow-md rounded-lg p-4 text-sm mb-10">
 					<h1 className="text-2xl font-semibold mb-6">Rental Fee</h1>
 					<div className="flex gap-2 items-start">
-						<img
-							src={`http://localhost:8787/${item?.images[0]}`}
-							alt={item?.item_name}
+						<Image
+							src={`/api/${item?.images[0]}`}
+							width={100}
+							height={100}
+							alt={item?.item_name || ""}
 							className="w-14 h-14 rounded-lg object-cover"
 						/>
 						<div>
@@ -145,8 +134,10 @@ const Page = () => {
 												: "border-white"
 										} bg-white w-[120px] h-[80px] flex flex-col justify-center items-center`}
 									>
-										<img
+										<Image
 											src={method.icon}
+											width={40}
+											height={40}
 											alt={method.name}
 											className="h-12 object-contain"
 										/>
@@ -190,8 +181,10 @@ const Page = () => {
 									Reference Code (Thai QR)
 								</label>
 								<div className="border rounded-lg p-3 bg-gray-50">
-									<img
+									<Image
 										src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/QR_Code_Example.svg/1024px-QR_Code_Example.svg.png"
+										width={200}
+										height={200}
 										alt="PromptPay QR"
 										className="w-48 h-auto rounded-lg mx-auto"
 									/>

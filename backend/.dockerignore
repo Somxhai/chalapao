@@ -1,7 +1,6 @@
 
 .git
 .github
-.env*
 .vscode
 .DS_Store
 Dockerfile

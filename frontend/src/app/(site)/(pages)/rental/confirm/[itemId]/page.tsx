@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useParams } from "next/navigation";
+import Image from "next/image";
 
 import Step from "@/components/Rental/step";
 import Header from "@/components/Header";
@@ -128,7 +129,7 @@ const Page = () => {
 		try {
 			const rental = {
 				item_id: item.id,
-				renter_id: user.user_id,
+				renter_id: user.id,
 				status: "pending",
 				start_date: startDate,
 				end_date: endDate,
@@ -182,10 +183,12 @@ const Page = () => {
 			<main className="container mx-auto px-16 py-8">
 				<div className="flex gap-10 flex-col lg:flex-row">
 					<div className="flex flex-col w-full lg:w-1/3 gap-2 mt-8">
-						<img
+						<Image
 							className="rounded-t-lg aspect-square w-full object-cover"
-							src={`http://localhost:8787/${images[0]}`}
-							alt={item?.item_name}
+							src={`/api/${images[0]}`}
+							width={500}
+							height={500}
+							alt={item?.item_name || ""}
 						/>
 						<h3 className="text-xl font-semibold">
 							{item?.item_name}
@@ -217,10 +220,7 @@ const Page = () => {
 							</div>
 							<div className="flex flex-col w-1/2 gap-1">
 								<h3 className="text-xl font-semibold">
-									Renter{" "}
-									<span className="text-xs underline text-blue-500 cursor-pointer">
-										Edit/Select Delivery Address
-									</span>
+									Renter
 								</h3>
 								<div className="border p-4 rounded-lg space-y-2 text-sm bg-white shadow">
 									<p>
