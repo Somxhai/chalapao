@@ -14,7 +14,7 @@ export interface ItemType {
 	created_at: string; // TIMESTAMPTZ, วันที่สร้าง, Format: YYYY-MM-DDTHH:MI:SSZ, Example: 2025-04-28T11:22:14.151Z
 	updated_at: string; // TIMESTAMPTZ, วันที่อัปเดต, Format: YYYY-MM-DDTHH:MI:SSZ, Example: 2025-04-28T11:22:14.151Z
 	images: string[]; // รูปภาพสินค้า, Example: ["image/item/is0h0586-34ca-4b11-90c6-3eacfe1b05e8.jpg"]
-	keywords: KeywordType[]; // คีย์เวิร์ดสินค้า, Example: []
+	keywords: KeywordType[] | null; // คีย์เวิร์ดสินค้า, Example: []
 	item_reviews: ItemReviewType[]; // รีวิวสินค้า, Example: []
 	item_rating: number; // FLOAT(0-5), คะแนนเฉลี่ยของผู้ใช้, Example: 4
 }

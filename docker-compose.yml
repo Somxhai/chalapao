@@ -1,18 +1,59 @@
 networks:
-  chalapao-network:
-    driver: bridge
+    chalapao-network:
+        driver: bridge
 
 services:
-  postgresql:
-    image: 'bitnami/postgresql:latest'
-    environment:
-      - POSTGRESQL_PASSWORD=pookiebear
-      - POSTGRESQL_USERNAME=server
-      - POSTGRESQL_DATABASE=chalapao
-    ports:
-      - '5439:5432'
-    networks:
-      - chalapao-network
+    postgresql:
+        image: "bitnami/postgresql:latest"
+        environment:
+            - POSTGRESQL_PASSWORD=pookiebear
+            - POSTGRESQL_USERNAME=server
+            - POSTGRESQL_DATABASE=chalapao
+        ports:
+            - "5439:5432"
+        networks:
+            - chalapao-network
+        volumes:
+            - ./postgres-init:/docker-entrypoint-initdb.d
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        ports:
+            - "8000:8787"
+        networks:
+            - chalapao-network
+        environment:
+            - PGHOST=postgresql
+            - PGPORT=5432
+            - PGDATABASE=chalapao
+            - PGPASSWORD=pookiebear
+            - PGUSERNAME=server
+            - BETTER_AUTH_SECRET=Q2W6awmJaeq6D9DWFtOZFZ2kUnmpe6Bl
+            - BETTER_AUTH_URL=http://frontend:3000/api/auth
+        depends_on:
+            postgresql:
+                condition: service_healthy
 
-
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        ports:
+            - "3000:3000"
+        networks:
+            - chalapao-network
+        depends_on:
+            - backend
+        environment:
+            - NODE_ENV=production
+            - DATABASE_URL=postgres://server:pookiebear@postgresql:5432/chalapao
+            - BACKEND_URL=http://backend:8787
+            - BETTER_AUTH_SECRET=Q2W6awmJaeq6D9DWFtOZFZ2kUnmpe6Bl
+            - BETTER_AUTH_URL=http://frontend:3000/api/auth

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 
 import Step from "@/components/Rental/step";
 
@@ -122,9 +124,11 @@ const Page = () => {
 					<div className="lg:col-span-2 bg-white p-4 shadow rounded-lg space-y-4 w-full">
 						<h3 className="text-xl font-semibold">Rental</h3>
 						<div className="flex gap-4 items-center">
-							<img
-								src={`http://localhost:8787/${item?.images[0]}`}
-								alt={item?.item_name}
+							<Image
+								src={`/api/${item?.images[0]}`}
+								width={100}
+								height={100}
+								alt={item?.item_name || ""}
 								className="w-20 h-20 rounded-lg object-cover"
 							/>
 							<div>
@@ -200,12 +204,12 @@ const Page = () => {
 				</div>
 				<div className="flex justify-end mt-6">
 					{rental?.status === "approved" ? (
-						<a
+						<Link
 							href={`/rental/payment/${rentalId}`}
 							className="bg-gray-700 text-white px-6 py-2 rounded-lg"
 						>
 							Proceed to Payment
-						</a>
+						</Link>
 					) : (
 						<button
 							onClick={cancel}

@@ -11,6 +11,7 @@ import {
 } from "flowbite-react";
 
 import { ReactNode, useEffect, useState } from "react";
+import Link from "next/link";
 
 import { signOut } from "@/lib/auth-client";
 
@@ -25,7 +26,6 @@ const Header = ({ children }: HeaderProps) => {
 	interface User {
 		first_name: string;
 		last_name: string;
-		// Add other properties if needed
 	}
 
 	const [user, setUser] = useState<User | null>(null);
@@ -117,7 +117,7 @@ const Header = ({ children }: HeaderProps) => {
 					</div>
 				</NavbarBrand>
 				<div className="flex md:order-2 gap-6 md:gap-8 items-center justify-end">
-					<a
+					<Link
 						href="/lender/items"
 						className="inline-flex items-center rounded-lg p-2 text-gray-500
                                     hover:bg-gray-100 focus:outline-none focus:ring-2
@@ -141,8 +141,8 @@ const Header = ({ children }: HeaderProps) => {
 								fill="#545454"
 							/>
 						</svg>
-					</a>
-					<a
+					</Link>
+					<Link
 						href="/lender/rentals"
 						className="inline-flex items-center rounded-lg p-2 text-gray-500
                                     hover:bg-gray-100 focus:outline-none focus:ring-2
@@ -174,7 +174,7 @@ const Header = ({ children }: HeaderProps) => {
 								fill="currentColor"
 							/>
 						</svg>
-					</a>
+					</Link>
 					<Dropdown
 						arrowIcon={false}
 						inline

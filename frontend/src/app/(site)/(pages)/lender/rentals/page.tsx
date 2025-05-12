@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Tabs, TabItem, Card, Button } from "flowbite-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { useSession } from "@/lib/auth-client";
 
@@ -52,8 +53,10 @@ const RentalCard = ({ rental }: { rental: any }) => (
 		<div className="flex gap-4">
 			<div className="w-24 h-24 bg-gray-100 flex items-center justify-center">
 				{rental.image ? (
-					<img
+					<Image
 						src={rental.image}
+						width={96}
+						height={96}
 						alt={rental.name}
 						className="w-full h-full object-cover"
 					/>
@@ -61,9 +64,15 @@ const RentalCard = ({ rental }: { rental: any }) => (
 					<div className="text-gray-400 text-3xl">No Image</div>
 				)}
 			</div>
-			<div className="flex-1">
+			<div className="flex-1 flex flex-col justify-between">
 				<h5 className="text-lg font-semibold">{rental.name}</h5>
 				<p className="text-sm text-gray-600">{rental.description}</p>
+				<Link
+					href={`/lender/rental/${rental.id}`}
+					className="text-sm text-blue-600 hover:underline mt-auto"
+				>
+					View Details
+				</Link>
 			</div>
 			<div className="flex flex-col justify-between text-right items-end gap-1">
 				<span className="text-sm text-gray-600">{rental.status}</span>
@@ -114,7 +123,7 @@ const ScrollableRentalList = ({ rentals, search, setSearch }: any) => (
 );
 
 const Page = () => {
-	const [rentalsData, setRentalsData] = useState<any[]>([]);
+	const [rentals, setRentals] = useState<any[]>([]);
 	const [search, setSearch] = useState("");
 	const [loading, setLoading] = useState(true);
 	const session = useSession();
@@ -141,14 +150,14 @@ const Page = () => {
 							0,
 						status,
 						image: r.item?.images?.[0]
-							? `http://localhost:8787/${r.item.images[0]}`
+							? `/api/${r.item.images[0]}`
 							: "",
 						actions: mapActions(status, r.rental?.id),
 					};
 				});
 				setLoading(false);
 
-				setRentalsData(rentals);
+				setRentals(rentals);
 			} catch (error) {
 				console.error("Failed to fetch rentals", error);
 			}
@@ -158,7 +167,7 @@ const Page = () => {
 	}, [session]);
 
 	const filteredByTab = (predicate: (s: string) => boolean) =>
-		rentalsData
+		rentals
 			.filter((r) => predicate(r.status))
 			.filter(
 				(r) =>

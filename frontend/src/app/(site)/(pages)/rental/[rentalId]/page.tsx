@@ -3,23 +3,18 @@
 import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 import { Button, Card } from "flowbite-react";
 
 import Header from "@/components/Header";
 import Links from "@/components/Header/links";
 
-const englishStatus = (
-	rentalStatus: string,
-	paymentStatus?: string
-): string => {
+const englishStatus = (rentalStatus: string): string => {
 	if (rentalStatus === "pending") return "Waiting for lender confirmation";
-	if (rentalStatus === "accepted" && paymentStatus === "pending")
-		return "Lender confirmed";
-	if (rentalStatus === "accepted" && paymentStatus === "completed")
-		return "Currently renting";
-	if (rentalStatus === "cancel") return "Cancelled";
-	if (paymentStatus === "failed") return "Outstanding payment required";
+	if (rentalStatus === "approved") return "Waiting for payment";
+	if (rentalStatus === "paid") return "Currently renting";
+	if (rentalStatus === "cancelled") return "Cancelled";
 	if (rentalStatus === "completed") return "Rental completed";
 	return "Unknown status";
 };
@@ -69,7 +64,7 @@ const Page = () => {
 	} = rental;
 
 	const duration = calcDuration(rentalInfo.start_date, rentalInfo.end_date);
-	const statusText = englishStatus(rentalInfo.status, payment?.status);
+	const statusText = englishStatus(rentalInfo.status);
 
 	const fullDeliveryAddress = delivery_address
 		? `${delivery_address.residence_info}, ${delivery_address.sub_district}, ${delivery_address.district}, ${delivery_address.province}, ${delivery_address.postal_code}`
@@ -102,9 +97,6 @@ const Page = () => {
 							</h2>
 							<p className="text-gray-600 mb-6">
 								{lessor_info.first_name} {lessor_info.last_name}
-								<span className="text-blue-600 text-sm underline ml-1 hover:text-blue-800">
-									View store
-								</span>
 							</p>
 
 							<div className="grid grid-cols-2 gap-4 mb-6 border-b pb-4">
@@ -141,9 +133,6 @@ const Page = () => {
 									End date:{" "}
 									{formatEnglishDate(rentalInfo.end_date)}
 								</p>
-								<span className="text-blue-600 underline text-sm mt-2 inline-block hover:text-blue-800">
-									Read rental terms and penalties
-								</span>
 							</div>
 						</div>
 
@@ -153,18 +142,22 @@ const Page = () => {
 							</p>
 
 							<div className="w-full flex justify-center">
-								<img
+								<Image
 									className="rounded-lg object-contain w-[200px] h-[200px]"
-									src={`http://localhost:8787/${item.images[0]}`}
+									src={`/api/${item.images[0]}`}
+									width={200}
+									height={200}
 									alt={item.item_name}
 								/>
 							</div>
 
 							<Card>
 								<div className="flex gap-4 mb-2">
-									<img
+									<Image
 										className="w-16 h-16 object-cover rounded-lg"
-										src={`http://localhost:8787/${item.images[0]}`}
+										src={`/api/${item.images[0]}`}
+										width={64}
+										height={64}
 										alt={item.item_name}
 									/>
 									<div className="flex-1 text-sm">

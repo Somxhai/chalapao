@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Tabs, TabItem, Card, Button } from "flowbite-react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
@@ -33,18 +34,18 @@ const mapStatus = (rentalStatus: string): string => {
 	}
 };
 
-const mapActions = (status: string, id: string) => {
+const mapActions = (status: string, id: string, item_id: string) => {
 	switch (status) {
 		case "Request Pending":
 			return [{ label: "Cancel", href: `/rental/pending/${id}` }];
 		case "Request Approved":
 			return [{ label: "Pay Now", href: `/rental/payment/${id}` }];
-		case "Renting":
 		case "Completed":
+			return [{ label: "Review", href: `/item/review/${item_id}` }];
+		case "Renting":
 		case "Cancelled":
-			return [{ label: "View Details", href: `/rental/${id}` }];
 		default:
-			return [];
+			return [{ label: "View Details", href: `/lender/rental/${id}` }];
 	}
 };
 
@@ -60,9 +61,11 @@ const RentalCard = ({ rental }: { rental: any }) => (
 	<Card className="mb-4">
 		<div className="flex gap-4">
 			<div className="w-24 h-24 flex items-center justify-center">
-				<img
+				<Image
 					className="rounded-t-lg aspect-square w-full object-cover"
-					src={`http://localhost:8787/${rental?.image}`}
+					src={`/api/${rental?.image}`}
+					width={96}
+					height={96}
 					alt={rental?.name}
 				/>
 			</div>
@@ -71,6 +74,12 @@ const RentalCard = ({ rental }: { rental: any }) => (
 				<p className="text-sm">From: {rental.startDate}</p>
 				<p className="text-sm">To: {rental.endDate}</p>
 				<p className="text-sm">Duration: {rental.duration}</p>
+				<Link
+					href={`/rental/${rental.id}`}
+					className="text-sm text-blue-600 hover:underline mt-auto"
+				>
+					View Details
+				</Link>
 			</div>
 			<div className="flex flex-col justify-between items-end gap-1">
 				<span className="text-sm text-gray-600">{rental.status}</span>
@@ -172,7 +181,7 @@ const Page = () => {
 						endDate: new Date(
 							r.rental?.end_date
 						).toLocaleDateString(),
-						actions: mapActions(status, r.rental?.id),
+						actions: mapActions(status, r.rental?.id, r.item.id),
 					};
 				});
 

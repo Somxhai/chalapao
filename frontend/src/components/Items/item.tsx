@@ -1,12 +1,9 @@
-import { ItemType } from "@/types/item";
+"use client";
 
-export default function ItemCard({
-	item,
-	image,
-}: {
-	item: ItemType;
-	image: string;
-}) {
+import { ItemType } from "@/types/item";
+import Image from "next/image";
+
+export default function ItemCard({ item }: { item: ItemType }) {
 	return (
 		<a
 			href={`/item/${item.id}`}
@@ -33,10 +30,12 @@ export default function ItemCard({
 					{item.item_status}
 				</span>
 			</div>
-			<img
+			<Image
 				className="rounded-lg aspect-square w-full object-cover"
-				src={`http://localhost:8787/${image}`}
+				src={`/api/${item.images[0]}`}
 				alt={item.item_name}
+				width={200}
+				height={200}
 			/>
 			<h5 className="text-xl font-semibold tracking-tight dark:text-white line-clamp-2">
 				{item.item_name}
