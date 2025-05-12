@@ -536,7 +536,6 @@ c9c1408a-f84c-45d8-bc45-1e64028cb2c7	1051d31f-19d2-4bae-bb9c-ccc706640688	v2cIxj
 COPY public."user" (id, name, email, email_verified, user_image, created_at, updated_at, user_type) FROM stdin;
 1051d31f-19d2-4bae-bb9c-ccc706640688	John Doe	john@example.com	f	\N	2025-04-26 21:59:07.867	2025-04-27 06:08:00.581636	renter
 36128b7f-da99-4e10-9f4d-605b1abb61b2	Jane Smith	jane@example.com	f	\N	2025-04-28 12:37:18.377	2025-04-28 05:42:57.305647	lessor
-287bfcfd-eb5a-43e8-9543-f4553b24a1c8	test	test@test.com	f	\N	2025-05-09 18:03:06.75	2025-05-09 18:03:06.75	renter
 \.
 
 
@@ -547,7 +546,6 @@ COPY public."user" (id, name, email, email_verified, user_image, created_at, upd
 COPY public.user_info (id, user_id, first_name, last_name, gender, birth_date, citizen_id, phone_number, created_at, updated_at) FROM stdin;
 d32d88dc-2d9e-4a20-a007-c63e8f16fd75	1051d31f-19d2-4bae-bb9c-ccc706640688	John	Doe	M	1992-01-25	9876543210988	0897654320	2025-04-27 13:57:55.837885+00	2025-04-27 13:58:52.415945+00
 c5ec1ea3-8041-479d-b57d-4634ffb3cd24	36128b7f-da99-4e10-9f4d-605b1abb61b2	Jane	Smith	F	1992-02-02	9876543210987	0897654321	2025-04-28 06:21:43.138748+00	2025-04-28 06:21:43.138748+00
-e10236b8-fe0d-46b9-af9c-10b108a16312	287bfcfd-eb5a-43e8-9543-f4553b24a1c8	test	test	M	2000-01-01	1234567891234	0123456789	2025-05-09 11:03:50.693614+00	2025-05-09 11:03:50.693614+00
 \.
 
 

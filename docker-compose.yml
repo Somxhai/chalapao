@@ -56,4 +56,4 @@ services:
             - DATABASE_URL=postgres://server:pookiebear@postgresql:5432/chalapao
             - BACKEND_URL=http://backend:8787
             - BETTER_AUTH_SECRET=Q2W6awmJaeq6D9DWFtOZFZ2kUnmpe6Bl
-            - BETTER_AUTH_URL=http://frontend:3000/api/auth
+            - BETTER_AUTH_URL=http://localhost:3000/api/auth

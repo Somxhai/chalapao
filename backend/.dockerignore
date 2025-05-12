@@ -5,3 +5,5 @@
 .DS_Store
 Dockerfile
 *.md
+deno.lock
+node_modules

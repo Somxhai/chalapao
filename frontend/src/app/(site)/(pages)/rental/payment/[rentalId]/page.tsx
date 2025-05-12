@@ -182,7 +182,7 @@ const Page = () => {
 								</label>
 								<div className="border rounded-lg p-3 bg-gray-50">
 									<Image
-										src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/QR_Code_Example.svg/1024px-QR_Code_Example.svg.png"
+										src="/icons/QR_Code.png"
 										width={200}
 										height={200}
 										alt="PromptPay QR"

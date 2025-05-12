@@ -129,7 +129,7 @@ const Page = () => {
 		try {
 			const rental = {
 				item_id: item.id,
-				renter_id: user.id,
+				renter_id: session?.data?.user.id,
 				status: "pending",
 				start_date: startDate,
 				end_date: endDate,
