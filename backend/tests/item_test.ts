@@ -1,8 +1,4 @@
-import {
-  assertArrayIncludes,
-  assertEquals,
-  assertExists,
-} from "jsr:@std/assert";
+import { assertArrayIncludes, assertEquals } from "jsr:@std/assert";
 import { itemApp } from "../handler/item.ts";
 import { FullItem, Item } from "../type/app.ts";
 import { createTestItem, createUser } from "./utils.ts";
